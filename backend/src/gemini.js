@@ -1,4 +1,5 @@
 import {openrouterJson} from './openrouter.js';
+import {groqJson} from './groq.js';
 import {youtubeId} from './captions.js';
 /** Gemini provider implements the same surface as the OpenAI and mock adapters. */
 const videoMime = {
@@ -97,7 +98,14 @@ export function geminiProvider() {
     throw new Error("Gemini provider unavailable");
   }
   async function json(system, user) {
-    if (process.env.OPENROUTER_API_KEY) return openrouterJson(system, user);
+    if (process.env.OPENROUTER_API_KEY) {
+      try{return await openrouterJson(system,user)}catch(e){
+        if(!process.env.GROQ_API_KEY || !/OpenRouter free models unavailable|aborted due to timeout|invalid JSON shape|provider error 429/i.test(String(e.message)))throw e;
+        console.warn('Text generation switching from free OpenRouter to configured Groq free fallback:',String(e.message).slice(0,140));
+        return groqJson(system,user);
+      }
+    }
+    if(process.env.GROQ_API_KEY)return groqJson(system,user);
     const r = await call(`models/${model}:generateContent`, {
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
