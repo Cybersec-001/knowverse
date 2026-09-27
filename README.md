@@ -4,10 +4,28 @@ A responsive Next.js 16 / React 19 / Tailwind CSS 4 prototype based on the Knowv
 
 ## Run locally
 
+Frontend demo, no backend needed:
+
 ```bash
 npm install
 npm run dev
 ```
+
+Full local stack (Node 22+, Docker Compose, `yt-dlp`):
+
+```bash
+cd backend
+cp .env.example .env
+# Set a fresh JWT_SECRET and GEMINI_API_KEY in backend/.env; choose AI_PROVIDER=gemini
+npm install
+docker compose up -d
+npm run migrate
+npm run start:all
+# In a second terminal: cd .. && NEXT_PUBLIC_API_URL=http://localhost:4000 npm run dev
+```
+
+This starts the API and worker together; Docker starts Postgres/pgvector, Redis and MinIO. A Gemini API key is needed for real generated summaries. The backend cannot be hosted by GitHub Pages.
+
 
 Open http://localhost:3000. Check production build with `npm run build` and run it with `npm start`.
 
