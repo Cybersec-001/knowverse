@@ -3,7 +3,7 @@ export const initialNotebooks:Notebook[] = [
 {id:'biology',title:'Biology foundations',subject:'Biology',updated:'Updated today',videos:4,color:'mint'},
 {id:'physics',title:'Physics essentials',subject:'Physics',updated:'Updated yesterday',videos:3,color:'lilac'},
 {id:'history',title:'World history',subject:'History',updated:'Updated Sep 22',videos:2,color:'peach'}];
-export type Video = {id:string; title:string; source:string; duration:string; status:'Ready'|'Transcribing'|'Chunking'|'Generating notes'|'Failed'; error?:string; updated:string};
+export type Video = {id:string; title:string; source:string; duration:string; status:'Ready'|'Transcribing'|'Chunking'|'Generating notes'|'Generating'|'Failed'; progress?:{percent:number;completed:number;total:number}; error?:string; updated:string};
 export const videos:Video[] = [
 {id:'cell-biology',title:'The cell: Structure and function',source:'Video lesson',duration:'18:42',status:'Ready',updated:'Today at 10:24'},
 {id:'photosynthesis',title:'Photosynthesis, explained simply',source:'Video lesson',duration:'24:15',status:'Ready',updated:'Yesterday'},
