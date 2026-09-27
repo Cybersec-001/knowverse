@@ -69,3 +69,5 @@ CREATE TABLE IF NOT EXISTS artifact_windows (
  content jsonb NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(video_id,type,window_index));
+
+ALTER TABLE artifact_windows ADD COLUMN IF NOT EXISTS window_fingerprint text;
