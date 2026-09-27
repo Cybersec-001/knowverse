@@ -97,31 +97,25 @@ export function geminiProvider() {
     }
     throw new Error("Gemini provider unavailable");
   }
-  async function json(system, user) {
-    // On the configured free tier, start with the working JSON provider instead of
-    // waiting through OpenRouter's long retry/backoff path before showing a summary.
-    if (process.env.GROQ_API_KEY) {
-      try { return await groqJson(system,user) }
-      catch (e) {
-        if (!process.env.OPENROUTER_API_KEY) throw e;
-        console.warn('Groq free generation unavailable; trying OpenRouter free fallback:',String(e.message).slice(0,140));
-        return openrouterJson(system,user);
-      }
-    }
-    if (process.env.OPENROUTER_API_KEY) return openrouterJson(system,user);
-    const r = await call(`models/${model}:generateContent`, {
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: user }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
+  async function geminiText(system,user){
+    // Stable 2.5 Flash-Lite is documented on the Gemini API free tier. No paid-only model.
+    const r=await call('models/gemini-2.5-flash-lite:generateContent',{
+      systemInstruction:{parts:[{text:system}]},
+      contents:[{role:'user',parts:[{text:user}]}],
+      generationConfig:{responseMimeType:'application/json',temperature:0.2}
     });
-    const text = r.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text ?? "")
-      .join("");
-    if (!text) throw new Error("Empty Gemini response");
+    const text=r.candidates?.[0]?.content?.parts?.map(p=>p.text??'').join('');
+    if(!text)throw new Error('Empty Gemini text response');
     return JSON.parse(text);
+  }
+  async function json(system, user) {
+    let last;
+    if (process.env.GROQ_API_KEY) try{return await groqJson(system,user)}
+      catch(e){last=e;console.warn('Groq free generation unavailable:',String(e.message).slice(0,140))}
+    if (process.env.OPENROUTER_API_KEY) try{return await openrouterJson(system,user)}
+      catch(e){last=e;console.warn('OpenRouter free generation unavailable:',String(e.message).slice(0,140))}
+    try{return await geminiText(system,user)}
+    catch(e){throw new Error(`Free text providers unavailable: ${String(e.message).slice(0,220)}; prior: ${String(last?.message??'none').slice(0,100)}`)}
   }
   return {
     kind: "gemini",
