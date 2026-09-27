@@ -52,7 +52,14 @@ async function makeMissingArtifacts(videoId){
  const missing=[];
  for(const type of steps){const {rows:[already]}=await query('SELECT 1 FROM artifacts WHERE video_id=$1 AND type=$2',[videoId,type]);if(!already)missing.push(type)}
  console.info('artifact.batch.start',JSON.stringify({videoId,missing}));
- const results=await Promise.allSettled(missing.map(async type=>{
+ // Deliver the editable summary as soon as it is ready. Do not make the user
+ // wait for notes, exam notes or MCQ verification before the first artifact.
+ if(missing.includes('summary')){
+  const started=Date.now();
+  const result=await makeArtifact(videoId,'summary');
+  console.info('artifact.batch.done',JSON.stringify({videoId,type:'summary',elapsed_ms:Date.now()-started,items:result.length}));
+ }
+ const results=await Promise.allSettled(missing.filter(type=>type!=='summary').map(async type=>{
   const started=Date.now();
   try{const result=await makeArtifact(videoId,type);console.info('artifact.batch.done',JSON.stringify({videoId,type,elapsed_ms:Date.now()-started,items:result.length}));return result}
   catch(e){console.error('artifact.batch.failed',JSON.stringify({videoId,type,elapsed_ms:Date.now()-started,error:String(e.message).slice(0,180)}));throw e}
