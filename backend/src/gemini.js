@@ -1,3 +1,4 @@
+import {openrouterJson} from './openrouter.js';
 /** Gemini provider implements the same surface as the OpenAI and mock adapters. */
 const videoMime = {
   ".mp4": "video/mp4",
@@ -95,6 +96,7 @@ export function geminiProvider() {
     throw new Error("Gemini provider unavailable");
   }
   async function json(system, user) {
+    if (process.env.OPENROUTER_API_KEY) return openrouterJson(system, user);
     const r = await call(`models/${model}:generateContent`, {
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
