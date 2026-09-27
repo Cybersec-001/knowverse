@@ -6,22 +6,28 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 // This is a free-tier safety margin, not a promise about daily quota or other replicas.
 let nextRequestAt=0;
 let retryBarrier=0;
+let gate=Promise.resolve();
 async function pacedFetch(url,options){
- const start=Math.max(Date.now(),nextRequestAt,retryBarrier);
- nextRequestAt=start+3500;
- await sleep(Math.max(0,start-Date.now()));
- // Another request may have received a 429 while this one was waiting.
- await sleep(Math.max(0,retryBarrier-Date.now()));
- const response=await fetch(url,options);
- if(response.status===429){
-  const raw=Number(response.headers.get('retry-after'));
-  const reset=Number(response.headers.get('x-ratelimit-reset'));
-  const resetMs=Number.isFinite(reset)&&reset>0?(reset>1e12?reset-Date.now():reset*1000-Date.now()):0;
-  const waitMs=Number.isFinite(raw)&&raw>0?raw*1000:resetMs;
-  retryBarrier=Math.max(retryBarrier,Date.now()+Math.min(75000,Math.max(3500,waitMs)));
-  nextRequestAt=Math.max(nextRequestAt,retryBarrier);
- }
- return response;
+ // Serialize only request starts. Network calls may still overlap; a 429 delays all later starts.
+ let release;
+ const previous=gate;
+ gate=new Promise(resolve=>{release=resolve});
+ await previous;
+ try{
+  const start=Math.max(Date.now(),nextRequestAt,retryBarrier);
+  await sleep(Math.max(0,start-Date.now()));
+  nextRequestAt=Date.now()+3500;
+  const response=await fetch(url,options);
+  if(response.status===429){
+   const raw=Number(response.headers.get('retry-after'));
+   const reset=Number(response.headers.get('x-ratelimit-reset'));
+   const resetMs=Number.isFinite(reset)&&reset>0?(reset>1e12?reset-Date.now():reset*1000-Date.now()):0;
+   const waitMs=Number.isFinite(raw)&&raw>0?raw*1000:resetMs;
+   retryBarrier=Math.max(retryBarrier,Date.now()+Math.min(75000,Math.max(3500,waitMs)));
+   nextRequestAt=Math.max(nextRequestAt,retryBarrier);
+  }
+  return response;
+ }finally{release()}
 }
 function expectedShape(data,system){
  if(!data||typeof data!=='object')return false;
