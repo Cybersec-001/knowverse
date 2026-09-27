@@ -18,8 +18,15 @@ export async function makeArtifact(videoId,type){
  if(chunkRows.length<=8){const retrieved=await retrieve(videoId,question,chunkRows.length);if(retrieved.length)anchors=retrieved}
  const windows=artifactWindows(anchors);
  const validIds=new Set(chunkRows.map(x=>x.id));
- const parts=await Promise.all(windows.map(async window=>{
-  let items=await p.generate(type,window);
+ const parts=await Promise.all(windows.map(async (window,index)=>{
+  const started=Date.now();
+  console.info('artifact.generate.start',JSON.stringify({videoId,type,window:index+1,windows:windows.length,chunks:window.length}));
+  let items;
+  try{items=await p.generate(type,window)}catch(e){
+   console.error('artifact.generate.failed',JSON.stringify({videoId,type,window:index+1,elapsed_ms:Date.now()-started,error:String(e.message).slice(0,180)}));
+   throw new Error(`${type} window ${index+1}/${windows.length} generation failed: ${String(e.message).slice(0,180)}`);
+  }
+  console.info('artifact.generate.done',JSON.stringify({videoId,type,window:index+1,elapsed_ms:Date.now()-started,items:items?.length}));
   if(!Array.isArray(items)||!items.length)throw new Error(`Empty ${type} output`);
   items=items.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>validIds.has(id)));
   if(!items.length)throw new Error(`No cited ${type} items`);
@@ -27,7 +34,13 @@ export async function makeArtifact(videoId,type){
  }));
  let content=parts.flat();
  if(type==='mcq'){
-  const checks=await Promise.all(content.map(item=>p.verifyMcq(item,chunkRows)));
+  const checks=await Promise.all(content.map(async (item,index)=>{
+   const started=Date.now();
+   try{return await p.verifyMcq(item,chunkRows)}catch(e){
+    console.error('artifact.verify.failed',JSON.stringify({videoId,type,index,elapsed_ms:Date.now()-started,error:String(e.message).slice(0,180)}));
+    throw new Error(`MCQ verification ${index+1}/${content.length} failed: ${String(e.message).slice(0,180)}`);
+   }
+  }));
   content=content.filter((_,i)=>checks[i]);
  }
  if(!content.length)throw new Error(`No verified ${type} items`);
@@ -38,7 +51,12 @@ export async function makeArtifact(videoId,type){
 async function makeMissingArtifacts(videoId){
  const missing=[];
  for(const type of steps){const {rows:[already]}=await query('SELECT 1 FROM artifacts WHERE video_id=$1 AND type=$2',[videoId,type]);if(!already)missing.push(type)}
- const results=await Promise.allSettled(missing.map(type=>makeArtifact(videoId,type)));
+ console.info('artifact.batch.start',JSON.stringify({videoId,missing}));
+ const results=await Promise.allSettled(missing.map(async type=>{
+  const started=Date.now();
+  try{const result=await makeArtifact(videoId,type);console.info('artifact.batch.done',JSON.stringify({videoId,type,elapsed_ms:Date.now()-started,items:result.length}));return result}
+  catch(e){console.error('artifact.batch.failed',JSON.stringify({videoId,type,elapsed_ms:Date.now()-started,error:String(e.message).slice(0,180)}));throw e}
+ }));
  const error=results.find(result=>result.status==='rejected');
  if(error)throw error.reason;
 }
