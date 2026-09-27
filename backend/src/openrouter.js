@@ -2,6 +2,17 @@
 const primary = process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
 const models = [primary, 'openrouter/free'].filter((x,i,a) => a.indexOf(x) === i);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+function expectedShape(data,system){
+ if(!data||typeof data!=='object')return false;
+ if(system.includes('"items"')){
+  if(!Array.isArray(data.items)||!data.items.length)return false;
+  if(system.includes('"question"'))return data.items.some(x=>x&&typeof x.question==='string'&&Array.isArray(x.options)&&x.source_chunk_id);
+  return data.items.some(x=>x&&typeof x.heading==='string'&&Array.isArray(x.bullets));
+ }
+ if(system.includes('"supported"'))return typeof data.supported==='boolean';
+ if(system.includes('"answer"'))return typeof data.answer==='string';
+ return true;
+}
 function firstJson(text) {
   const clean=String(text??'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
   try {const data=JSON.parse(clean);if(data&&typeof data==='object'&&!Array.isArray(data))return data}catch{}
@@ -33,8 +44,8 @@ export async function openrouterJson(system, user) {
       if (response.ok) {
         const data = await response.json();
         const parsed=firstJson(data.choices?.[0]?.message?.content);
-        if(parsed)return parsed;
-        if(repair){if(model===models.at(-1))throw new Error('OpenRouter free models returned non-JSON text');break}
+        if(expectedShape(parsed,system))return parsed;
+        if(repair){if(model===models.at(-1))throw new Error('OpenRouter free models returned invalid JSON shape');break}
         // A non-JSON answer gets one repair prompt on the same free model.
         attempt=1;
         continue;
