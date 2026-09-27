@@ -55,7 +55,10 @@ export async function openrouterJson(system, user) {
       if (attempt===1){if(model===models.at(-1))throw new Error(`OpenRouter free models unavailable (${response.status}): ${body}`);break}
       if (attempt===2){if(model===models.at(-1))throw new Error(`OpenRouter free models unavailable (${response.status}): ${body}`);break}
       const raw = Number(response.headers.get('retry-after'));
-      await sleep(Number.isFinite(raw) && raw > 0 ? Math.min(raw * 1000, 30000) : 2000);
+      const reset = Number(response.headers.get('x-ratelimit-reset'));
+      const resetMs = Number.isFinite(reset) && reset > 0 ? (reset > 1e12 ? reset-Date.now() : reset*1000-Date.now()) : 0;
+      const waitMs=Number.isFinite(raw) && raw > 0 ? raw*1000 : resetMs;
+      await sleep(Math.min(75000,Math.max(2000,waitMs)));
     }
   }
   throw new Error('OpenRouter free models unavailable');
