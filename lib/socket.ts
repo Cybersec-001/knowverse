@@ -1,0 +1,2 @@
+import {API,token} from './api';
+export function subscribe(scope:'video'|'notebook',id:string,onData:(data:{type:string;status?:string;video_id?:string;artifact_type?:string})=>void){if(!API||!token())return ()=>{};const url=API.replace(/^http/,'ws')+'/ws';let socket:WebSocket;try{socket=new WebSocket(url)}catch{return ()=>{}}socket.onopen=()=>socket.send(JSON.stringify({type:'subscribe',token:token(),scope,id}));socket.onmessage=e=>{try{onData(JSON.parse(e.data))}catch{}};return ()=>socket.close()}
