@@ -98,8 +98,8 @@ export function geminiProvider() {
     throw new Error("Gemini provider unavailable");
   }
   async function geminiText(system,user){
-    // Stable 2.5 Flash-Lite is documented on the Gemini API free tier. No paid-only model.
-    const r=await call('models/gemini-2.5-flash-lite:generateContent',{
+    // The configured key returned HTTP 200 on a 3.1 Flash-Lite JSON test. No paid-only model.
+    const r=await call('models/gemini-3.1-flash-lite:generateContent',{
       systemInstruction:{parts:[{text:system}]},
       contents:[{role:'user',parts:[{text:user}]}],
       generationConfig:{responseMimeType:'application/json',temperature:0.2}
