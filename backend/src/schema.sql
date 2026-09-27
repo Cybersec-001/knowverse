@@ -47,3 +47,5 @@ CREATE TABLE IF NOT EXISTS video_uploads (
  body bytea NOT NULL,
  mime_type text NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now());
+
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS timestamps_verified boolean NOT NULL DEFAULT false;
