@@ -2,6 +2,27 @@
 const primary = process.env.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free';
 const models = [primary, 'openrouter/free'].filter((x,i,a) => a.indexOf(x) === i);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+// Limit request starts across parallel artifacts in this worker process to <20/min.
+// This is a free-tier safety margin, not a promise about daily quota or other replicas.
+let nextRequestAt=0;
+let retryBarrier=0;
+async function pacedFetch(url,options){
+ const start=Math.max(Date.now(),nextRequestAt,retryBarrier);
+ nextRequestAt=start+3500;
+ await sleep(Math.max(0,start-Date.now()));
+ // Another request may have received a 429 while this one was waiting.
+ await sleep(Math.max(0,retryBarrier-Date.now()));
+ const response=await fetch(url,options);
+ if(response.status===429){
+  const raw=Number(response.headers.get('retry-after'));
+  const reset=Number(response.headers.get('x-ratelimit-reset'));
+  const resetMs=Number.isFinite(reset)&&reset>0?(reset>1e12?reset-Date.now():reset*1000-Date.now()):0;
+  const waitMs=Number.isFinite(raw)&&raw>0?raw*1000:resetMs;
+  retryBarrier=Math.max(retryBarrier,Date.now()+Math.min(75000,Math.max(3500,waitMs)));
+  nextRequestAt=Math.max(nextRequestAt,retryBarrier);
+ }
+ return response;
+}
 function expectedShape(data,system){
  if(!data||typeof data!=='object')return false;
  if(system.includes('"items"')){
@@ -36,7 +57,7 @@ export async function openrouterJson(system, user) {
   for (const model of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const repair=attempt===2;
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await pacedFetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST', signal: AbortSignal.timeout(45000),
         headers: {'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://cybersec-001.github.io/knowverse/', 'X-Title': 'Knowverse'},
         body: JSON.stringify({model, messages: [{role:'system',content:system+(repair?' Return ONLY valid JSON with the requested keys, no Markdown or commentary.':'')}, {role:'user',content:user}], temperature:0.2, response_format:{type:'json_object'}, max_tokens:1800})
