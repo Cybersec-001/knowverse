@@ -49,3 +49,15 @@ CREATE TABLE IF NOT EXISTS video_uploads (
  created_at timestamptz NOT NULL DEFAULT now());
 
 ALTER TABLE videos ADD COLUMN IF NOT EXISTS timestamps_verified boolean NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS preliminary_summaries (
+ video_id uuid PRIMARY KEY REFERENCES videos(id) ON DELETE CASCADE,
+ content jsonb NOT NULL,
+ covered_chunks integer NOT NULL,
+ total_chunks integer NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now());
+
+CREATE TABLE IF NOT EXISTS video_caption_uploads (
+ video_id uuid PRIMARY KEY REFERENCES videos(id) ON DELETE CASCADE,
+ raw_vtt text NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now());
