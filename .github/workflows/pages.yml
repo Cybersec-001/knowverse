@@ -1,4 +1,4 @@
-name: Deploy demo to GitHub Pages
+name: Build connected frontend for GitHub Pages
 on:
   push:
     branches: [main]
@@ -20,6 +20,8 @@ jobs:
           node-version: '22'
       - run: npm install
       - run: npm run build:pages
+        env:
+          NEXT_PUBLIC_API_URL: https://knowverse-vjwq.onrender.com
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
