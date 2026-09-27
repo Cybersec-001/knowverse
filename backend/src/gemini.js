@@ -98,14 +98,17 @@ export function geminiProvider() {
     throw new Error("Gemini provider unavailable");
   }
   async function json(system, user) {
-    if (process.env.OPENROUTER_API_KEY) {
-      try{return await openrouterJson(system,user)}catch(e){
-        if(!process.env.GROQ_API_KEY || !/OpenRouter free models unavailable|aborted due to timeout|invalid JSON shape|provider error 429/i.test(String(e.message)))throw e;
-        console.warn('Text generation switching from free OpenRouter to configured Groq free fallback:',String(e.message).slice(0,140));
-        return groqJson(system,user);
+    // On the configured free tier, start with the working JSON provider instead of
+    // waiting through OpenRouter's long retry/backoff path before showing a summary.
+    if (process.env.GROQ_API_KEY) {
+      try { return await groqJson(system,user) }
+      catch (e) {
+        if (!process.env.OPENROUTER_API_KEY) throw e;
+        console.warn('Groq free generation unavailable; trying OpenRouter free fallback:',String(e.message).slice(0,140));
+        return openrouterJson(system,user);
       }
     }
-    if(process.env.GROQ_API_KEY)return groqJson(system,user);
+    if (process.env.OPENROUTER_API_KEY) return openrouterJson(system,user);
     const r = await call(`models/${model}:generateContent`, {
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
