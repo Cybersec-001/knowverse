@@ -1,4 +1,4 @@
-import 'dotenv/config';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds,validateTimedSegments} from './retrieval.js';import {youtubeCaptions,youtubeDuration,parseVtt} from './captions.js';import {load} from './storage.js';import {publishStatus,publishArtifact} from './events.js';
+import 'dotenv/config';import {createHash} from 'node:crypto';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds,validateTimedSegments} from './retrieval.js';import {youtubeCaptions,youtubeDuration,parseVtt} from './captions.js';import {load} from './storage.js';import {publishStatus,publishArtifact} from './events.js';
 const steps=['summary','notes','exam_notes','mcq'];
 export async function setStatus(id,status,error=null){await query('UPDATE videos SET status=$2,error=$3,updated_at=now() WHERE id=$1',[id,status,error]);await publishStatus(id,status)}
 /** Cover every part of long transcripts, rather than retrieving only the first/top eight chunks. */
@@ -16,11 +16,12 @@ export async function makeArtifact(videoId,type){
  // Small videos retain relevance ranking; longer videos cover every time window.
  let anchors=chunkRows;
  if(chunkRows.length<=8){const retrieved=await retrieve(videoId,question,chunkRows.length);if(retrieved.length)anchors=retrieved}
- const windows=artifactWindows(anchors);
+ const windows=artifactWindows(anchors,type==='summary'&&anchors.length>64?32:8);
  const validIds=new Set(chunkRows.map(x=>x.id));
  const parts=[];for(let index=0;index<windows.length;index++){const window=windows[index];
-  const {rows:[saved]}=await query('SELECT content FROM artifact_windows WHERE video_id=$1 AND type=$2 AND window_index=$3',[videoId,type,index]);
-  if(saved&&Array.isArray(saved.content)&&saved.content.length){const windowIds=new Set(window.map(c=>c.id));if(sourceIds(saved.content).every(id=>windowIds.has(id))){parts.push(saved.content);console.info('artifact.window.resumed',JSON.stringify({videoId,type,window:index+1}));continue}}
+  const fingerprint=createHash('sha256').update(window.map(c=>c.id).join(',')).digest('hex');
+  const {rows:[saved]}=await query('SELECT content,window_fingerprint FROM artifact_windows WHERE video_id=$1 AND type=$2 AND window_index=$3',[videoId,type,index]);
+  if(saved?.window_fingerprint===fingerprint&&Array.isArray(saved.content)&&saved.content.length){const windowIds=new Set(window.map(c=>c.id));if(sourceIds(saved.content).length&&sourceIds(saved.content).every(id=>windowIds.has(id))){parts.push(saved.content);console.info('artifact.window.resumed',JSON.stringify({videoId,type,window:index+1}));continue}}
   const started=Date.now();
   console.info('artifact.generate.start',JSON.stringify({videoId,type,window:index+1,windows:windows.length,chunks:window.length}));
   let items;
@@ -32,10 +33,26 @@ export async function makeArtifact(videoId,type){
   if(!Array.isArray(items)||!items.length)throw new Error(`Empty ${type} output`);
   items=items.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>validIds.has(id)));
   if(!items.length)throw new Error(`No cited ${type} items`);
-  await query('INSERT INTO artifact_windows(video_id,type,window_index,content) VALUES($1,$2,$3,$4::jsonb) ON CONFLICT(video_id,type,window_index) DO UPDATE SET content=EXCLUDED.content,created_at=now()',[videoId,type,index,JSON.stringify(items)]);
+  await query('INSERT INTO artifact_windows(video_id,type,window_index,content,window_fingerprint) VALUES($1,$2,$3,$4::jsonb,$5) ON CONFLICT(video_id,type,window_index) DO UPDATE SET content=EXCLUDED.content,window_fingerprint=EXCLUDED.window_fingerprint,created_at=now()',[videoId,type,index,JSON.stringify(items),fingerprint]);
   parts.push(items);
  }
  let content=parts.flat();
+ if(type==='summary'&&parts.length>1){
+  // Reduce cited window summaries into a short notepad result. A failed reduction
+  // leaves every saved window intact for a later resume and never presents a partial result.
+  const byId=new Map(chunkRows.map(c=>[c.id,c]));
+  const candidates=content.flatMap(item=>(item.bullets??[]).map(b=>({heading:item.heading,bullet:b}))).filter(x=>byId.has(x.bullet.source_chunk_id));
+  const reducedInput=candidates.map(({heading,bullet})=>({...byId.get(bullet.source_chunk_id),text:`${heading}: ${bullet.text}`}));
+  if(!reducedInput.length)throw new Error('No cited summary claims for final reduction');
+  console.info('artifact.reduce.start',JSON.stringify({videoId,window_count:parts.length,claims:reducedInput.length}));
+  const started=Date.now();
+  const reduced=await p.generate('summary',reducedInput);
+  const allowed=new Set(reducedInput.map(c=>c.id));
+  const verified=reduced.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>allowed.has(id)));
+  if(!verified.length)throw new Error('Reduced summary lacks valid source citations');
+  content=verified;
+  console.info('artifact.reduce.done',JSON.stringify({videoId,elapsed_ms:Date.now()-started,items:content.length}));
+ }
  if(type==='mcq'){
   const checks=await Promise.all(content.map(async (item,index)=>{
    const started=Date.now();
