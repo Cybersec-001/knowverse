@@ -57,11 +57,14 @@ export async function openrouterJson(system, user) {
   for (const model of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const repair=attempt===2;
-      const response = await pacedFetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST', signal: AbortSignal.timeout(45000),
+      const started=Date.now();
+      let response;
+      try{response = await pacedFetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST', signal: AbortSignal.timeout(90000),
         headers: {'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://cybersec-001.github.io/knowverse/', 'X-Title': 'Knowverse'},
         body: JSON.stringify({model, messages: [{role:'system',content:system+(repair?' Return ONLY valid JSON with the requested keys, no Markdown or commentary.':'')}, {role:'user',content:user}], temperature:0.2, response_format:{type:'json_object'}, max_tokens:1800})
-      });
+      })}catch(e){console.error('openrouter.request.failed',JSON.stringify({model,attempt:attempt+1,elapsed_ms:Date.now()-started,error:String(e.message).slice(0,180)}));throw e}
+      console.info('openrouter.request.done',JSON.stringify({model,attempt:attempt+1,elapsed_ms:Date.now()-started,status:response.status}));
       if (response.ok) {
         const data = await response.json();
         const parsed=firstJson(data.choices?.[0]?.message?.content);
