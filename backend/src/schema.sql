@@ -61,3 +61,11 @@ CREATE TABLE IF NOT EXISTS video_caption_uploads (
  video_id uuid PRIMARY KEY REFERENCES videos(id) ON DELETE CASCADE,
  raw_vtt text NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now());
+
+CREATE TABLE IF NOT EXISTS artifact_windows (
+ video_id uuid NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+ type text NOT NULL CHECK(type IN ('summary','notes','exam_notes','mcq')),
+ window_index integer NOT NULL,
+ content jsonb NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(video_id,type,window_index));
