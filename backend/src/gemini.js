@@ -1,4 +1,5 @@
 import {openrouterJson} from './openrouter.js';
+import {youtubeId} from './captions.js';
 /** Gemini provider implements the same surface as the OpenAI and mock adapters. */
 const videoMime = {
   ".mp4": "video/mp4",
@@ -114,7 +115,7 @@ export function geminiProvider() {
   return {
     kind: "gemini",
     async transcribeYoutube(url) {
-      const id = new URL(url).searchParams.get("v");
+      const id = youtubeId(url);
       if (!/^[a-zA-Z0-9_-]{11}$/.test(id ?? ""))
         throw new Error("Invalid YouTube URL");
       const request = {
