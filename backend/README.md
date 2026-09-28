@@ -4,7 +4,7 @@ Express 5, PostgreSQL + pgvector, Redis/BullMQ, S3-compatible storage, and a pro
 
 ## Start
 
-Requirements: Node 22+, Docker Compose, and `yt-dlp` on PATH for YouTube captions.
+Requirements: Node 22+, Docker Compose, and `yt-dlp` on PATH for YouTube captions and optional audio fallback. `ffmpeg` and `ffprobe` are installed via npm static packages for the audio path.
 
 ```bash
 cp .env.example .env
@@ -38,7 +38,7 @@ The API uses no separate vector DB. A video chunk's embedding is 1536 dimensions
 ## Known limitations
 
 - The current environment has no Docker daemon, running Postgres/Redis/MinIO, or provider credentials in the Node process, so end-to-end ingestion against real infrastructure was not run here. Core provider/chunker tests pass; API routes compile and UI build passes. Set up the services to test the full pipeline.
-- YouTube caption extraction via yt-dlp depends on the video having accessible captions and on YouTube not blocking extraction. Uploaded videos need a configured Gemini or OpenAI provider; the mock adapter never fabricates uploaded-video speech.
+- YouTube caption extraction via yt-dlp depends on the video having accessible captions and on YouTube not blocking extraction. When captions fail and `GROQ_API_KEY` is set, a verified video up to 60 minutes triggers a Groq `whisper-large-v3` fallback. It downloads audio via yt-dlp, converts and splits into ten-minute mono MP3 chunks below the 25 MB free-tier per-file limit, and requests timed multilingual transcription with automatic language detection. This can still fail if YouTube blocks audio downloading, video duration cannot be verified, or Groq quota is exhausted; a timed transcript upload remains the recovery route. Uploaded videos need a configured Gemini or OpenAI provider; the mock adapter never fabricates uploaded-video speech.
 - Redis Pub/Sub pushes status and artifact events via authenticated WebSockets for both video and notebook subscribers. The legacy SSE endpoint remains for compatibility.
 - Exports stream PDF/Word responses rather than saving copies to S3; uploaded media is in S3-compatible storage.
 - YouTube playback uses an IFrame API; source timestamps seek the embedded video, subject to the video owner allowing embedding. Uploaded video playback is not implemented. User-authored summary additions persist in `user_notes`, separate from AI-generated artifacts; editing a generated point still changes a session-local copy only.
