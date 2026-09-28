@@ -22,8 +22,8 @@ app.delete('/videos/:id/notes/:noteId',auth,owner,wrap(async(req,res)=>{const {r
 app.post('/videos/:id/captions',auth,owner,captionUpload.single('captions'),wrap(async(req,res)=>{
  if(req.video.source_type!=='youtube')return res.status(400).json({error:'Caption upload requires a YouTube video'});
  if(req.video.status!=='failed')return res.status(409).json({error:'Wait for processing to fail before replacing captions'});
- const file=req.file;if(!file||file.size>5*1024*1024||!/(\.vtt|\.srt)$/i.test(file.originalname))return res.status(400).json({error:'Upload a .vtt or .srt file under 5 MB'});
- const raw=file.buffer.toString('utf8');const cues=parseVtt(raw);if(!cues.length)return res.status(400).json({error:'No timed captions found in file'});
+ const file=req.file;if(!file||file.size>5*1024*1024||!/(\.vtt|\.srt|\.txt)$/i.test(file.originalname))return res.status(400).json({error:'Upload timed captions as .vtt, .srt or .txt under 5 MB'});
+ const raw=file.buffer.toString('utf8');if(/\.txt$/i.test(file.originalname)&&!(/(?:^|\n)WEBVTT\b/i.test(raw)||/\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}[.,]\d{3}/.test(raw)))return res.status(400).json({error:'The .txt file must contain WEBVTT or SRT timed captions'});const cues=parseVtt(raw);if(!cues.length)return res.status(400).json({error:'No timed captions found in file'});
  if(cues.length>20000)return res.status(400).json({error:'Too many caption cues'});let prior=-1;for(const c of cues){if(!Number.isFinite(c.start)||!Number.isFinite(c.end)||c.start<0||c.end<c.start||c.start<prior||c.end>43200)return res.status(400).json({error:'Caption timestamps are invalid'});prior=c.start}
  await query('INSERT INTO video_caption_uploads(video_id,raw_vtt) VALUES($1,$2) ON CONFLICT(video_id) DO UPDATE SET raw_vtt=EXCLUDED.raw_vtt,created_at=now()',[req.video.id,raw]);
  await query('UPDATE videos SET status=$2,error=NULL,updated_at=now() WHERE id=$1',[req.video.id,'transcribing']);
