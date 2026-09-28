@@ -1,4 +1,4 @@
 import type { Metadata } from 'next';
 import './globals.css';
-export const metadata: Metadata = {title:'Knowverse - Learn from any video',description:'Turn a video into a study package you can explore and trust.'};
+export const metadata: Metadata = {metadataBase:new URL('https://cybersec-001.github.io/knowverse/'),title:{default:'Knowverse - Turn lesson videos into study notes',template:'%s | Knowverse'},description:'Build editable study notes, summaries and practice questions from lesson videos. Public YouTube videos may need a separate caption upload.',openGraph:{title:'Knowverse - Study from video',description:'Editable notes, summaries and practice questions linked to the source video.',type:'website',siteName:'Knowverse'},twitter:{card:'summary',title:'Knowverse - Study from video',description:'Editable notes, summaries and practice questions linked to the source video.'},robots:{index:true,follow:true}};
 export default function RootLayout({children}:{children:React.ReactNode}) {return <html lang="en"><body>{children}</body></html>}
