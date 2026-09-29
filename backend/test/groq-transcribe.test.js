@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {transcribeAudio,transcribeYoutubeWithGroq} from '../src/groq-transcribe.js';
+import {transcribeAudio,transcribeYoutubeWithGroq,MAX_AUDIO_SECONDS,CHUNK_SECONDS,MAX_AUDIO_CHUNKS} from '../src/groq-transcribe.js';
 
 test('Whisper sends multilingual audio with timestamped segments and preserves Tamil',async()=>{
  const old=process.env.GROQ_API_KEY,before=global.fetch;process.env.GROQ_API_KEY='fake-test-key';let request;
@@ -9,5 +9,7 @@ test('Whisper sends multilingual audio with timestamped segments and preserves T
 });
 test('Groq fallback rejects invalid or long source duration before downloading',async()=>{
  const old=process.env.GROQ_API_KEY;process.env.GROQ_API_KEY='fake-test-key';
- try{for(const duration of [0,3601])await assert.rejects(()=>transcribeYoutubeWithGroq('https://youtu.be/abcdefghijk',duration),/at most 60 minutes/)}finally{if(old)process.env.GROQ_API_KEY=old;else delete process.env.GROQ_API_KEY}
+ try{for(const duration of [0,MAX_AUDIO_SECONDS+1])await assert.rejects(()=>transcribeYoutubeWithGroq('https://youtu.be/abcdefghijk',duration),/3 hours/)}finally{if(old)process.env.GROQ_API_KEY=old;else delete process.env.GROQ_API_KEY}
 });
+
+test('long-audio budget supports a 77-minute video in ten-minute chunks',()=>{assert.equal(CHUNK_SECONDS,600);assert.ok(MAX_AUDIO_SECONDS>=4651);assert.ok(MAX_AUDIO_CHUNKS>=8)});
