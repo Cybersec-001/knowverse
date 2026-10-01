@@ -9,7 +9,7 @@ test('Whisper sends multilingual audio with timestamped segments and preserves T
 });
 test('Groq fallback rejects invalid or long source duration before downloading',async()=>{
  const old=process.env.GROQ_API_KEY;process.env.GROQ_API_KEY='fake-test-key';
- try{for(const duration of [0,MAX_AUDIO_SECONDS+1])await assert.rejects(()=>transcribeYoutubeWithGroq('https://youtu.be/abcdefghijk',duration),/3 hours/)}finally{if(old)process.env.GROQ_API_KEY=old;else delete process.env.GROQ_API_KEY}
+ try{for(const duration of [0,MAX_AUDIO_SECONDS+1])await assert.rejects(()=>transcribeYoutubeWithGroq('https://youtu.be/abcdefghijk',duration),/10-hour/)}finally{if(old)process.env.GROQ_API_KEY=old;else delete process.env.GROQ_API_KEY}
 });
 
 test('long-audio budget supports a 77-minute video in ten-minute chunks',()=>{assert.equal(CHUNK_SECONDS,600);assert.ok(MAX_AUDIO_SECONDS>=4651);assert.ok(MAX_AUDIO_CHUNKS>=8)});
