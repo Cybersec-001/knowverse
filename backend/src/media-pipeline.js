@@ -1,46 +1,42 @@
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {mkdtemp,writeFile,readFile,readdir,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,readdir,rm,stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
 import ffprobe from 'ffprobe-static';
-import {transcribeAudio,CHUNK_SECONDS,MAX_AUDIO_SECONDS,MAX_AUDIO_CHUNKS} from './groq-transcribe.js';
-import {validateTimedSegments} from './retrieval.js';
-const exec=promisify(execFile),opts={timeout:180000,maxBuffer:1_000_000};
+import {CHUNK_SECONDS,MAX_AUDIO_SECONDS,MAX_AUDIO_CHUNKS,MAX_SOURCE_BYTES} from './media-config.js';
+import {transcriptionProvider} from './transcription-provider.js';
+import {runAudioChunks} from './audio-checkpoints.js';
+const exec=promisify(execFile),opts={timeout:900000,maxBuffer:1_000_000};
 export async function probeDuration(path){const {stdout}=await exec(ffprobe.path,['-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',path],opts);const n=Number(stdout.trim());if(!Number.isFinite(n)||n<=0)throw new Error('Media duration unavailable');return n}
 export async function withPreparedAudio(source,fn){
  const dir=await mkdtemp(join(tmpdir(),'knowverse-media-'));
  try{
-  const input=join(dir,'source.media');await writeFile(input,source);
+  // Production receives a streamed storage/download path. Buffer support is for small callers/tests.
+  const input=typeof source==='string'?source:join(dir,'source.media');
+  if(typeof source!=='string')await writeFile(input,source);
+  if((await stat(input)).size>MAX_SOURCE_BYTES)throw new Error('Media exceeds storage budget');
   const duration=await probeDuration(input);
-  if(duration>MAX_AUDIO_SECONDS)throw new Error('Media exceeds the free worker processing budget (3 hours)');
+  // MP3 padding may add milliseconds to exactly ten hours.
+  if(duration>MAX_AUDIO_SECONDS+1)throw new Error('Media exceeds the 10-hour input budget');
   await exec(ffmpegPath,['-hide_banner','-loglevel','error','-i',input,'-vn','-ac','1','-ar','16000','-b:a','32k','-f','segment','-segment_time',String(CHUNK_SECONDS),'-reset_timestamps','1',join(dir,'chunk-%03d.mp3')],opts);
   const files=(await readdir(dir)).filter(x=>/^chunk-\d+\.mp3$/.test(x)).sort();
   if(!files.length||files.length>MAX_AUDIO_CHUNKS+1)throw new Error('Audio split failed within worker budget');
-  return await fn({dir,files,duration});
+  // Use source-time boundaries, not accumulating container padding (which drifts over 60 files).
+  const chunks=files.map((file,chunkIndex)=>({file,path:join(dir,file),chunkIndex,startTime:chunkIndex*CHUNK_SECONDS,endTime:Math.min(duration,(chunkIndex+1)*CHUNK_SECONDS)}));
+  return await fn({dir,files,chunks,duration});
  }finally{await rm(dir,{recursive:true,force:true})}
 }
-export async function transcribePreparedMedia(source,{onProgress=async()=>{}}={}){
- return withPreparedAudio(source,async({dir,files,duration})=>{
-  const segments=[];let offset=0,language=null;
-  for(let i=0;i<files.length;i++){
-   const file=files[i],path=join(dir,file);
-   const audio=await readFile(path);
-   const chunkDuration=await probeDuration(path);
-   let result;
-   for(let attempt=1;attempt<=3;attempt++){
-    try{result=await transcribeAudio(audio,file,offset);break}
-    catch(error){
-     const msg=String(error.message),retryable=/\b(429|500|502|503|504)\b|timed? out|network/i.test(msg);
-     if(!retryable||attempt===3)throw new Error(`Audio chunk ${i+1}/${files.length} failed after ${attempt} attempt(s): ${msg.slice(0,150)}`);
-     await new Promise(resolve=>setTimeout(resolve,Math.min(4000,500*2**(attempt-1))));
-    }
-   }
-   segments.push(...result.segments);language??=result.language;
-   offset+=chunkDuration;
-   await onProgress({currentChunk:i+1,totalChunks:files.length});
-  }
-  return {segments:validateTimedSegments(segments,duration),language:language??'unknown',duration,totalChunks:files.length};
+export async function transcribePreparedMedia(source,options={}){
+ return withPreparedAudio(source,async({chunks,duration})=>{
+  await options.onProgress?.({stage:'splitting_audio',currentChunk:0,totalChunks:chunks.length});
+  const p=transcriptionProvider();
+  const result=await runAudioChunks(chunks,{...options,duration,cleanup:c=>rm(c.path,{force:true}),transcribe:async c=>{
+   const result=await p.transcribeAudio(await readFile(c.path),c.file,0);
+   result.segments=result.segments.map(s=>({...s,start:Math.min(c.endTime,s.start+c.startTime),end:Math.min(c.endTime,s.end+c.startTime)}));
+   return result;
+  }});
+  return {...result,duration};
  });
 }
