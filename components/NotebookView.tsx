@@ -1,2 +1,434 @@
-'use client';import {useState,useEffect,useCallback} from 'react';import Link from 'next/link';import {ArrowLeft,Check,ChevronRight,FileVideo,Link2,Plus,Upload,X,Clock} from 'lucide-react';import {Shell} from './Shell';import {api,backendEnabled,token} from '@/lib/api';import {subscribe} from '@/lib/socket';import {useRouter} from 'next/navigation';import {videos,Video} from '@/lib/data';
-export function NotebookView({id}:{id:string}){const [items,setItems]=useState<Video[]>(!backendEnabled()&&id==='biology'?videos:[]);const [show,setShow]=useState(false);const [mode,setMode]=useState<'url'|'file'>('url');const [url,setUrl]=useState('');const [file,setFile]=useState<File|null>(null);const [error,setError]=useState('');const [justAdded,setJustAdded]=useState(false);const [savedTitle,setSavedTitle]=useState('');const router=useRouter();const refresh=useCallback(()=>api<{videos:Array<{id:string;title:string;source_type:string;duration:number;status:Video['status'];error?:string|null;updated_at:string;progress?:{percent:number;completed:number;total:number}}>}>(`/notebooks/${id}/videos`).then(data=>setItems(data.videos.map(v=>({id:v.id,title:v.title,source:v.source_type==='youtube'?'YouTube':'Video file',duration:v.duration?`${Math.floor(v.duration/60)}:${String(v.duration%60).padStart(2,'0')}`:'—',status:v.status.charAt(0).toUpperCase()+v.status.slice(1) as Video['status'],error:v.error??undefined,progress:v.progress,updated:new Date(v.updated_at).toLocaleDateString()})))).catch(()=>{}),[id]);useEffect(()=>{if(backendEnabled()){if(!token()){router.replace('/login');return}refresh();api<{notebooks:Array<{id:string;title:string}>}>('/notebooks').then(d=>setSavedTitle(d.notebooks.find(n=>n.id===id)?.title??''));const unsubscribe=subscribe('notebook',id,data=>{if(data.type==='status'||data.type==='artifact')refresh()});return unsubscribe}try{const list=JSON.parse(localStorage.getItem('knowverse-notebooks')||'[]');queueMicrotask(()=>setSavedTitle(list.find((n:{id:string;title:string})=>n.id===id)?.title||''))}catch{}},[id,router,refresh]);const title=backendEnabled()?savedTitle||'Notebook':id==='biology'?'Biology foundations':id==='physics'?'Physics essentials':id==='history'?'World history':savedTitle||'New notebook';const add=async(e:React.FormEvent)=>{e.preventDefault();if(backendEnabled()){try{const form=new FormData();form.append('notebook_id',id);if(mode==='file'&&file)form.append('file',file);else if(mode==='url')form.append('youtube_url',url);else throw new Error('Choose a video file');if(mode==='file'&&file&&file.size>25*1024*1024)throw new Error('Video upload limit is 25 MB in the free demo. Try a smaller file or paste a YouTube link.');const result=await api<{video:{id:string;title:string;status:string}}>('/videos',{method:'POST',body:form});setItems(prev=>[{id:result.video.id,title:result.video.title,source:mode==='url'?'YouTube':'Video file',duration:'—',status:'Transcribing',updated:'Just added'},...prev]);setShow(false);setJustAdded(true);setError('')}catch(e){setError(e instanceof Error?e.message:'Could not add video')}return}if(mode==='url'&&!/^https?:\/\//i.test(url)){setError('Paste a full http or https video URL.');return}if(mode==='file'&&!file){setError('Choose a video file first.');return}const newVideo:Video={id:'demo-'+Date.now(),title:mode==='url'?(new URL(url).hostname+' video'):file!.name,source:mode==='url'?'Video URL':'Uploaded file',duration:'—',status:'Transcribing',updated:'Just added'};setItems([newVideo,...items]);setShow(false);setJustAdded(true);setUrl('');setFile(null);setError('');setTimeout(()=>setItems(prev=>prev.map(v=>v.id===newVideo.id?{...v,status:'Chunking'}:v)),3000);setTimeout(()=>setItems(prev=>prev.map(v=>v.id===newVideo.id?{...v,status:'Generating notes'}:v)),6000);setTimeout(()=>setItems(prev=>prev.map(v=>v.id===newVideo.id?{...v,status:'Ready'}:v)),9000)};return <Shell><main className="page"><Link href="/dashboard" className="muted inline-flex items-center gap-2 hover:text-[var(--accent)] text-xs mb-8"><ArrowLeft size={15}/> All notebooks</Link><div className="flex flex-wrap items-end justify-between gap-5 mb-10"><div><div className="eyebrow mb-3">Notebook</div><h1 className="text-[32px] md:text-[38px] tracking-[-.05em] font-semibold">{title}</h1><p className="muted mt-2">{items.length} {items.length===1?'video':'videos'} · Your study collection</p></div><button className="btn btn-primary" onClick={()=>setShow(true)}><Plus size={18}/> Paste a video link</button></div>{justAdded&&<div role="status" className="card p-4 mb-5 bg-[#f2f8f2] text-sm"><b>Video added.</b> Its summary will open in an editable notepad after processing. {backendEnabled()?'Watch its status below, then open the video.':'In demo mode, open the sample biology lesson to see the notepad.'}</div>}{items.length?<div className="card overflow-hidden"><div className="p-5 border-b border-[var(--line)] flex justify-between"><h2 className="font-semibold">Videos in this notebook</h2><span className="small-label">{items.length} items</span></div>{items.map((v,i)=><div key={v.id} className={`p-4 md:px-5 md:py-5 flex flex-wrap sm:flex-nowrap items-center gap-3 md:gap-5 ${i?'border-t border-[var(--line)]':''}`}><div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#eaf4ed] text-[var(--accent)] grid place-items-center flex-none"><FileVideo size={19}/></div><div className="min-w-0 flex-1"><h3 className="font-semibold truncate">{v.title}</h3><div className="muted text-xs mt-1 flex flex-wrap gap-2"><span>{v.source}</span><span>·</span><span>{v.duration}</span><span className="hide-phone">·</span><span className="hide-phone">{v.updated}</span></div></div><div aria-live="polite" className={`text-xs flex items-center gap-2 min-w-0 whitespace-normal break-words order-last sm:order-none w-full sm:w-auto sm:max-w-[45%] pl-[52px] sm:pl-0 ${v.status==='Ready'?'text-[var(--accent)]':'muted'}`}>{v.status==='Ready'?<Check size={15}/>:v.status==='Failed'?<X size={15}/>:<span className="spinner"/>}<span title={v.error??undefined}>{v.status}{backendEnabled()&&v.progress?` - ${v.progress.percent}% (${v.progress.completed}/${v.progress.total} steps)`:''}{v.status==='Failed'&&v.error?`: ${v.error.slice(0,150)}`:''}</span></div>{(v.status==='Ready'||v.status==='Failed')&&(!v.id.startsWith('demo-')||backendEnabled())?<Link href={backendEnabled()?`/study?notebook=${encodeURIComponent(id)}&video=${encodeURIComponent(v.id)}`:`/notebook/${id}/video/${v.id}`} aria-label={`${v.status==='Failed'?'Open failed video and upload captions for':'Open'} ${v.title}`} title={v.status==='Failed'?'Open video to see failure and upload captions':'Open video'} className="btn btn-quiet !p-2 !min-h-0 ml-auto sm:ml-0"><ChevronRight size={18}/></Link>:<span className="w-8"/>}</div>)}</div>:<div className="card p-12 text-center"><div className="w-12 h-12 rounded-lg bg-[#eaf4ed] text-[var(--accent)] grid place-items-center mx-auto mb-4"><FileVideo/></div><h2 className="text-lg font-semibold">Start with a video</h2><p className="muted mt-2 mb-5">Add a video URL or upload a file to start building your study package.</p><button className="btn btn-primary" onClick={()=>setShow(true)}><Plus size={16}/> Add content</button></div>}<div className="mt-6 text-xs muted flex items-center gap-2"><Clock size={13}/> {backendEnabled()?"Live processing status is updated from the backend.":"Demo processing states move from transcribing to chunking to generating notes to ready. No media is processed or uploaded yet."}</div></main>{show&&<div className="fixed inset-0 bg-[#16231cb3] z-50 grid place-items-center p-5" onClick={()=>setShow(false)}><form className="card p-7 w-full max-w-lg" onClick={e=>e.stopPropagation()} onSubmit={add}><div className="flex justify-between items-center mb-2"><h2 className="text-xl font-semibold">Add a video link</h2><button className="icon-btn" aria-label="Close" type="button" onClick={()=>setShow(false)}><X size={18}/></button></div><p className="muted text-sm mb-5">Paste a YouTube link. Once processing finishes, its generated summary opens in your editable notepad. {backendEnabled()?"The file or URL will be sent for processing.":"This is a frontend demo; files and URLs stay in your browser."}</p><div className="flex gap-2 mb-5"><button type="button" onClick={()=>{setMode('url');setError('')}} className={`btn ${mode==='url'?'btn-primary':'btn-quiet'}`}><Link2 size={15}/> Paste URL</button><button type="button" onClick={()=>{setMode('file');setError('')}} className={`btn ${mode==='file'?'btn-primary':'btn-quiet'}`}><Upload size={15}/> Upload file</button></div>{mode==='url'?<><label htmlFor="video-url" className="block text-xs font-semibold mb-2">Video URL</label><input id="video-url" className="field" placeholder="https://example.com/video" value={url} onChange={e=>setUrl(e.target.value)}/></>:<><label htmlFor="video-file" className="block text-xs font-semibold mb-2">Video file</label><p className="muted text-xs mb-2">Maximum upload size: 25 MB on the free demo.</p><input id="video-file" type="file" accept="video/*" className="field" onChange={e=>setFile(e.target.files?.[0]??null)}/></>}{error&&<p className="text-[#b64e47] mt-2 text-xs">{error}</p>}<button type="submit" className="btn btn-primary w-full mt-6">Create study package</button></form></div>}</Shell>}
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  FileVideo,
+  Link2,
+  Plus,
+  Upload,
+  X,
+  Clock,
+} from "lucide-react";
+import { Dialog, friendlyError } from "./UI";
+import { Shell } from "./Shell";
+import { api, backendEnabled, token } from "@/lib/api";
+import { subscribe } from "@/lib/socket";
+import { useRouter } from "next/navigation";
+import { videos, Video } from "@/lib/data";
+export function NotebookView({ id }: { id: string }) {
+  const [items, setItems] = useState<Video[]>(
+    !backendEnabled() && id === "biology" ? videos : [],
+  );
+  const [adding, setAdding] = useState(false);
+  const [show, setShow] = useState(false);
+  const [mode, setMode] = useState<"url" | "file">("url");
+  const [url, setUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [justAdded, setJustAdded] = useState(false);
+  const [savedTitle, setSavedTitle] = useState("");
+  const router = useRouter();
+  const refresh = useCallback(
+    () =>
+      api<{
+        videos: Array<{
+          id: string;
+          title: string;
+          source_type: string;
+          duration: number;
+          status: Video["status"];
+          error?: string | null;
+          updated_at: string;
+          progress?: { percent: number; completed: number; total: number };
+        }>;
+      }>(`/notebooks/${id}/videos`)
+        .then((data) =>
+          setItems(
+            data.videos.map((v) => ({
+              id: v.id,
+              title: v.title,
+              source: v.source_type === "youtube" ? "YouTube" : "Video file",
+              duration: v.duration
+                ? `${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, "0")}`
+                : "—",
+              status: (v.status.charAt(0).toUpperCase() +
+                v.status.slice(1)) as Video["status"],
+              error: v.error ?? undefined,
+              progress: v.progress,
+              updated:
+                v.updated_at && Number.isFinite(Date.parse(v.updated_at))
+                  ? new Date(v.updated_at).toLocaleDateString()
+                  : "Date unavailable",
+            })),
+          ),
+        )
+        .catch(() => {}),
+    [id],
+  );
+  useEffect(() => {
+    if (backendEnabled()) {
+      if (!token()) {
+        router.replace("/login");
+        return;
+      }
+      refresh();
+      api<{ notebooks: Array<{ id: string; title: string }> }>("/notebooks")
+        .then((d) =>
+          setSavedTitle(d.notebooks.find((n) => n.id === id)?.title ?? ""),
+        )
+        .catch(() =>
+          setError("Could not load the notebook title. Try reloading."),
+        );
+      const unsubscribe = subscribe("notebook", id, (data) => {
+        if (data.type === "status" || data.type === "artifact") refresh();
+      });
+      return unsubscribe;
+    }
+    try {
+      const list = JSON.parse(
+        localStorage.getItem("knowverse-notebooks") || "[]",
+      );
+      queueMicrotask(() =>
+        setSavedTitle(
+          list.find((n: { id: string; title: string }) => n.id === id)?.title ||
+            "",
+        ),
+      );
+    } catch {}
+  }, [id, router, refresh]);
+  const title = backendEnabled()
+    ? savedTitle || "Notebook"
+    : id === "biology"
+      ? "Biology foundations"
+      : id === "physics"
+        ? "Physics essentials"
+        : id === "history"
+          ? "World history"
+          : savedTitle || "New notebook";
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (backendEnabled()) {
+      setAdding(true);
+      try {
+        const form = new FormData();
+        form.append("notebook_id", id);
+        if (mode === "file" && file) form.append("file", file);
+        else if (mode === "url") form.append("youtube_url", url);
+        else throw new Error("Choose a video file");
+        if (mode === "file" && file && file.size > 25 * 1024 * 1024)
+          throw new Error(
+            "Video upload limit is 25 MB in the free demo. Try a smaller file or paste a YouTube link.",
+          );
+        const result = await api<{
+          video: { id: string; title: string; status: string };
+        }>("/videos", { method: "POST", body: form });
+        setItems((prev) => [
+          {
+            id: result.video.id,
+            title: result.video.title,
+            source: mode === "url" ? "YouTube" : "Video file",
+            duration: "—",
+            status: "Transcribing",
+            updated: "Just added",
+          },
+          ...prev,
+        ]);
+        setShow(false);
+        setJustAdded(true);
+        setError("");
+      } catch (e) {
+        setError(
+          friendlyError(e instanceof Error ? e.message : "Could not add video"),
+        );
+      }
+      setAdding(false);
+      return;
+    }
+    if (mode === "url" && !/^https?:\/\//i.test(url)) {
+      setError("Paste a full http or https video URL.");
+      setAdding(false);
+      return;
+    }
+    if (mode === "file" && !file) {
+      setError("Choose a video file first.");
+      return;
+    }
+    const newVideo: Video = {
+      id: "demo-" + Date.now(),
+      title: mode === "url" ? new URL(url).hostname + " video" : file!.name,
+      source: mode === "url" ? "Video URL" : "Uploaded file",
+      duration: "—",
+      status: "Transcribing",
+      updated: "Just added",
+    };
+    setItems([newVideo, ...items]);
+    setShow(false);
+    setJustAdded(true);
+    setUrl("");
+    setFile(null);
+    setError("");
+    setTimeout(
+      () =>
+        setItems((prev) =>
+          prev.map((v) =>
+            v.id === newVideo.id ? { ...v, status: "Chunking" } : v,
+          ),
+        ),
+      3000,
+    );
+    setTimeout(
+      () =>
+        setItems((prev) =>
+          prev.map((v) =>
+            v.id === newVideo.id ? { ...v, status: "Generating notes" } : v,
+          ),
+        ),
+      6000,
+    );
+    setTimeout(
+      () =>
+        setItems((prev) =>
+          prev.map((v) =>
+            v.id === newVideo.id ? { ...v, status: "Ready" } : v,
+          ),
+        ),
+      9000,
+    );
+  };
+  return (
+    <Shell>
+      <main className="page">
+        <Link
+          href="/dashboard"
+          className="muted inline-flex items-center gap-2 hover:text-[var(--accent)] text-xs mb-8"
+        >
+          <ArrowLeft size={15} /> All notebooks
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-5 mb-10">
+          <div>
+            <div className="eyebrow mb-3">Notebook</div>
+            <h1 className="text-[32px] md:text-[38px] tracking-[-.05em] font-semibold">
+              {title}
+            </h1>
+            <p className="muted mt-2">
+              {items.length} {items.length === 1 ? "video" : "videos"} · Your
+              study collection
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShow(true)}>
+            <Plus size={18} /> Paste a video link
+          </button>
+        </div>
+        {justAdded && (
+          <div role="status" className="card p-4 mb-5 bg-[#f2f8f2] text-sm">
+            <b>Video added.</b> Its summary will open in an editable notepad
+            after processing.{" "}
+            {backendEnabled()
+              ? "Watch its status below, then open the video."
+              : "In demo mode, open the sample biology lesson to see the notepad."}
+          </div>
+        )}
+        {items.length ? (
+          <div className="card overflow-hidden">
+            <div className="p-5 border-b border-[var(--line)] flex justify-between">
+              <h2 className="font-semibold">Videos in this notebook</h2>
+              <span className="small-label">{items.length} items</span>
+            </div>
+            {items.map((v, i) => (
+              <div
+                key={v.id}
+                className={`p-4 md:px-5 md:py-5 flex flex-wrap sm:flex-nowrap items-center gap-3 md:gap-5 ${i ? "border-t border-[var(--line)]" : ""}`}
+              >
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#eaf4ed] text-[var(--accent)] grid place-items-center flex-none">
+                  <FileVideo size={19} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold truncate">{v.title}</h3>
+                  <div className="muted text-xs mt-1 flex flex-wrap gap-2">
+                    <span>{v.source}</span>
+                    <span>·</span>
+                    <span>{v.duration}</span>
+                    <span className="hide-phone">·</span>
+                    <span className="hide-phone">{v.updated}</span>
+                  </div>
+                </div>
+                <div
+                  aria-live="polite"
+                  className={`text-xs flex items-center gap-2 min-w-0 whitespace-normal break-words order-last sm:order-none w-full sm:w-auto sm:max-w-[45%] pl-[52px] sm:pl-0 ${v.status === "Ready" ? "text-[var(--accent)]" : "muted"}`}
+                >
+                  {v.status === "Ready" ? (
+                    <Check size={15} />
+                  ) : v.status === "Failed" ? (
+                    <X size={15} />
+                  ) : (
+                    <span className="spinner" />
+                  )}
+                  <span>
+                    {v.status}
+                    {backendEnabled() && v.progress
+                      ? ` - ${v.progress.percent}% (${v.progress.completed}/${v.progress.total} steps)`
+                      : ""}
+                    {v.status === "Failed" && v.error
+                      ? `: ${"Open this video for recovery options"}`
+                      : ""}
+                  </span>
+                </div>
+                {(v.status === "Ready" || v.status === "Failed") &&
+                (!v.id.startsWith("demo-") || backendEnabled()) ? (
+                  <Link
+                    href={
+                      backendEnabled()
+                        ? `/study?notebook=${encodeURIComponent(id)}&video=${encodeURIComponent(v.id)}`
+                        : `/study?demo=1`
+                    }
+                    aria-label={`${v.status === "Failed" ? "Open failed video and upload captions for" : "Open"} ${v.title}`}
+                    title={
+                      v.status === "Failed"
+                        ? "Open video to see failure and upload captions"
+                        : "Open video"
+                    }
+                    className="btn btn-quiet !p-2 !min-h-0 ml-auto sm:ml-0"
+                  >
+                    <ChevronRight size={18} />
+                  </Link>
+                ) : (
+                  <span className="w-8" />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card p-12 text-center">
+            <div className="w-12 h-12 rounded-lg bg-[#eaf4ed] text-[var(--accent)] grid place-items-center mx-auto mb-4">
+              <FileVideo />
+            </div>
+            <h2 className="text-lg font-semibold">Start with a video</h2>
+            <p className="muted mt-2 mb-5">
+              Add a video URL or upload a file to start building your study
+              package.
+            </p>
+            <button className="btn btn-primary" onClick={() => setShow(true)}>
+              <Plus size={16} /> Add content
+            </button>
+          </div>
+        )}
+        <div className="mt-6 text-xs muted flex items-center gap-2">
+          <Clock size={13} />{" "}
+          {backendEnabled()
+            ? "Live processing status is updated from the backend."
+            : "Demo processing states move from transcribing to chunking to generating notes to ready. No media is processed or uploaded yet."}
+        </div>
+      </main>
+      {show && (
+        <Dialog title="Generate knowledge" onClose={() => setShow(false)}>
+          <form onSubmit={add}>
+            <p className="muted text-sm mb-5">
+              Add a YouTube lesson or upload a video. Your source becomes a
+              study workspace.
+            </p>
+            <div className="flex gap-2 mb-5">
+              <button
+                type="button"
+                className={
+                  "btn " + (mode === "url" ? "btn-primary" : "btn-quiet")
+                }
+                onClick={() => setMode("url")}
+              >
+                <Link2 size={15} />
+                Video link
+              </button>
+              <button
+                type="button"
+                className={
+                  "btn " + (mode === "file" ? "btn-primary" : "btn-quiet")
+                }
+                onClick={() => setMode("file")}
+              >
+                <Upload size={15} />
+                Upload video
+              </button>
+            </div>
+            {mode === "url" ? (
+              <>
+                <label htmlFor="video-url" className="small-label block mb-2">
+                  YouTube URL
+                </label>
+                <input
+                  autoFocus
+                  required
+                  id="video-url"
+                  type="url"
+                  className="field"
+                  placeholder="Paste a YouTube video link..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="link-accent text-xs mt-3"
+                  onClick={async () => {
+                    try {
+                      setUrl(await navigator.clipboard.readText());
+                    } catch {
+                      setError("Use Ctrl/Cmd + V to paste your link.");
+                    }
+                  }}
+                >
+                  Paste from clipboard
+                </button>
+                {url && (
+                  <div className="input-preview">
+                    <b>Source provided</b>
+                    <p>{url}</p>
+                    <p className="muted mt-2">
+                      Title, duration and language will appear after the source
+                      is processed. We do not guess metadata.
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <label htmlFor="video-file" className="small-label block mb-2">
+                  Video file
+                </label>
+                <input
+                  required
+                  id="video-file"
+                  type="file"
+                  accept="video/*"
+                  className="field"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <p className="muted text-xs mt-3">
+                  Video uploads up to 25 MB. Audio-only uploads are not
+                  supported by the current backend.
+                </p>
+                {file && (
+                  <div className="input-preview">
+                    {file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB
+                  </div>
+                )}
+              </>
+            )}
+            {error && (
+              <p role="alert" className="error-notice">
+                {error}
+              </p>
+            )}
+            <button disabled={adding} className="btn btn-primary w-full mt-6">
+              {adding ? "Adding your source..." : "Generate knowledge"}
+            </button>
+            <p className="muted text-xs mt-4">
+              SRT, VTT and TXT transcripts can be added from the video workspace
+              after creating a source.
+            </p>
+          </form>
+        </Dialog>
+      )}
+    </Shell>
+  );
+}
