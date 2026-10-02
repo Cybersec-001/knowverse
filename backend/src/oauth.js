@@ -190,4 +190,4 @@ export function oauthRouter(signToken) {
   });
 
   return router;
-                                                                               }
+}
