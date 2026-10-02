@@ -93,7 +93,7 @@ function clearStateCookie(res) {
 
 function failToFrontend(res, message) {
   clearStateCookie(res);
-  res.redirect(`${frontend()}/login/?error=${encodeURIComponent(message)}`);
+  res.redirect(`${frontend()}/login?error=${encodeURIComponent(message)}`);
 }
 
 async function exchangeCode(name, code, verifier) {
@@ -182,7 +182,7 @@ export function oauthRouter(signToken) {
       const user = await resolveUser(name, profile);
       clearStateCookie(res);
       // Token goes in the fragment so it never reaches server logs.
-      res.redirect(`${frontend()}/auth/callback/#token=${encodeURIComponent(signToken(user))}`);
+      res.redirect(`${frontend()}/auth/callback#token=${encodeURIComponent(signToken(user))}`);
     } catch (e) {
       console.error('oauth callback failed', name, e.message);
       failToFrontend(res, e.message.startsWith('An account') || e.message.includes('did not share') ? e.message : 'Could not complete login');
