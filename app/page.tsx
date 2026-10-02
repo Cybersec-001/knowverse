@@ -1,3 +1,114 @@
-import {Brand} from '@/components/Brand';
-import Link from 'next/link';import {StudyScene} from '@/components/StudyScene';import {ArrowRight} from 'lucide-react';
-export default function Landing(){return <div className="min-h-screen bg-white"><header className="max-w-[1140px] mx-auto px-6 py-6 flex justify-between items-center"><Link href="/" className="brand-link"><Brand/></Link><Link href="/login" className="text-sm font-semibold hover:text-[var(--accent)]">Log in</Link></header><main className="max-w-[1140px] mx-auto px-6 pt-20 md:pt-28 pb-20 text-center"><span className="tag mx-auto">From video to understanding</span><h1 className="max-w-[780px] mx-auto mt-7 text-[42px] md:text-[68px] font-semibold tracking-[-.065em] leading-[1.08]">Turn any lesson video into a study session.</h1><p className="text-base md:text-lg muted mt-6 max-w-[570px] mx-auto leading-7">Get a clear summary, editable notes, practice questions, and a tutor, all linked back to the video.</p><Link href="/signup" className="btn btn-primary mt-8 text-base !px-6 !py-3">Start learning <ArrowRight size={17}/></Link><div className="mt-16 md:mt-20 max-w-[860px] mx-auto"><StudyScene/></div><p className="muted text-xs mt-8">{process.env.NEXT_PUBLIC_API_URL?"Connect to your study workspace. Public YouTube videos may be unavailable to process when YouTube requires sign-in.":"A frontend demo with sample lesson content. No live video processing here."}</p></main></div>}
+import { Brand } from "@/components/Brand";
+import Link from "next/link";
+import {
+  ArrowRight,
+  BookOpen,
+  MessageSquare,
+  ScanText,
+  Check,
+} from "lucide-react";
+const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+export default function Landing() {
+  return (
+    <div className="landing">
+      <header className="landing-header">
+        <Link href="/" className="brand-link">
+          <Brand />
+        </Link>
+        <nav className="landing-nav" aria-label="Public navigation">
+          <a href="#how-it-works">The workspace</a>
+          <Link href="/login">Log in</Link>
+          <Link href="/signup" className="btn btn-primary">
+            Get started <ArrowRight size={14} />
+          </Link>
+        </nav>
+      </header>
+      <main>
+        <section className="landing-hero">
+          <div>
+            <div className="eyebrow">Your AI learning workspace</div>
+            <h1>
+              Turn videos
+              <br />
+              into <span>knowledge.</span>
+            </h1>
+            <p>
+              Paste a video source and transform it into summaries, notes,
+              questions, and an interactive learning workspace. Less replaying.
+              More understanding.
+            </p>
+            <div className="hero-actions">
+              <Link href="/signup" className="btn btn-primary">
+                Start learning <ArrowRight size={16} />
+              </Link>
+              <a href="#workspace-preview" className="btn btn-quiet">
+                Explore the workspace <ArrowRight size={16} />
+              </a>
+            </div>
+            <div className="hero-foot">
+              <span>
+                <Check size={13} className="inline mr-1" />
+                Source-linked notes
+              </span>
+              <span>
+                <Check size={13} className="inline mr-1" />
+                Your own study space
+              </span>
+            </div>
+          </div>
+          <figure className="demo-frame" id="workspace-preview">
+            <video
+              className="demo-video"
+              src={`${base}/demo/knowverse-demo.mp4`}
+              poster={`${base}/demo/poster.jpg`}
+              width={960}
+              height={540}
+              muted
+              loop
+              playsInline
+              autoPlay
+              controls
+              preload="metadata"
+              aria-label="Demo video: a tour of Knowverse notebooks, study workspace and tutor"
+            />
+            <figcaption>Demo tour of the app. Sample lesson, not a processed video.</figcaption>
+          </figure>
+        </section>
+        <section id="how-it-works" className="landing-features">
+          <div className="eyebrow">A better way to study</div>
+          <h2 className="mt-3">One lesson. A whole learning space.</h2>
+          <div>
+            {[
+              {
+                Icon: ScanText,
+                title: "Stay close to the source",
+                text: "Search source passages and jump back to timestamped moments in your video.",
+              },
+              {
+                Icon: BookOpen,
+                title: "Make the ideas your own",
+                text: "Edit summaries, keep personal notes and take your study materials with you.",
+              },
+              {
+                Icon: MessageSquare,
+                title: "Go beyond the first answer",
+                text: "Ask your tutor, review exam notes and test your understanding with practice questions.",
+              },
+            ].map(({ Icon, title, text }) => (
+              <article key={title}>
+                <Icon size={24} className="link-accent" />
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
+          <p className="muted text-xs mt-10">
+            YouTube access and free AI limits can affect processing. Caption
+            uploads are available as a fallback. This preview is illustrative,
+            not a processed lesson.
+          </p>
+        </section>
+      </main>
+    </div>
+  );
+}

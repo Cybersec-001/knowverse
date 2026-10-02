@@ -49,3 +49,7 @@ Run `npm test` for core tests. Never use demo JWT/S3 passwords or mock AI in pro
 Without S3 configuration, uploads (up to 25 MB) are stored as PostgreSQL `bytea` in `video_uploads`; this is only for small demo files and consumes your Neon free database allowance. With S3 variables configured, MinIO/S3 is used instead. The server no longer requires S3 at startup for YouTube processing. A free Render web service must run both the API and BullMQ worker in one process; see `npm run start:all`.
 
 For a single free Render web service, use root directory `backend`, build command `npm install && npm run migrate`, and start command `npm run start:all`. Set `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET` (32+ random characters), `CORS_ORIGIN`, `AI_PROVIDER=gemini`, and `GEMINI_API_KEY` as host environment secrets. If S3 is omitted, video uploads are kept in Postgres and capped at 25 MB. Since free Render sleeps, the BullMQ worker also sleeps while the service is idle; queued videos may wait for a later request to wake it. The API and worker share one process, so this is a demo setup, not a reliable production worker.
+
+## YouTube transcripts
+
+Order: uploaded .vtt/.srt captions, then (only if `ENABLE_SERVER_YTDLP=true`) yt-dlp, then Gemini with the public YouTube URL, then a clear "upload captions" message. The server never uses proxies, cookies, or spoofed headers. `YOUTUBE_API_KEY` (optional) enables official metadata checks (private, live, too long). `CORS_ORIGIN` accepts a comma-separated list.
