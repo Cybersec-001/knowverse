@@ -2,6 +2,13 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS users (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text NOT NULL UNIQUE, password_hash text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+CREATE TABLE IF NOT EXISTS oauth_identities (
+ user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ provider text NOT NULL CHECK(provider IN ('google','microsoft','github')),
+ provider_user_id text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(provider, provider_user_id));
+CREATE INDEX IF NOT EXISTS oauth_identities_user_idx ON oauth_identities(user_id);
 CREATE TABLE IF NOT EXISTS notebooks (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  title text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
