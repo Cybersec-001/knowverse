@@ -1,15 +1,22 @@
 "use client";
 import { Brand } from "@/components/Brand";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { friendlyError } from "./UI";
-import { api, backendEnabled } from "@/lib/api";
-export function Auth({ kind }: { kind: "login" | "signup" }) {
+import { API, api, backendEnabled } from "@/lib/api";
+
+const socialProviders = [
+  { id: "google", label: "Google" },
+  { id: "microsoft", label: "Microsoft" },
+  { id: "github", label: "GitHub" },
+];
+function AuthForm({ kind }: { kind: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
+  const linkError = useSearchParams().get("error") ?? "";
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   return (
@@ -44,6 +51,22 @@ export function Auth({ kind }: { kind: "login" | "signup" }) {
                 : "Your next lesson starts here."}
             </p>
             <div className="card p-6 md:p-8">
+              {backendEnabled() && (
+                <>
+                  <div className="grid gap-3">
+                    {socialProviders.map((p) => (
+                      <a
+                        key={p.id}
+                        href={`${API}/auth/oauth/${p.id}/start`}
+                        className="btn btn-quiet w-full"
+                      >
+                        Continue with {p.label}
+                      </a>
+                    ))}
+                  </div>
+                  <div className="divider my-5" />
+                </>
+              )}
               <p className="muted text-xs mb-5">Continue with email.</p>
               <form
                 onSubmit={async (e) => {
@@ -132,9 +155,9 @@ export function Auth({ kind }: { kind: "login" | "signup" }) {
                   <ArrowRight size={16} />
                 </button>
               </form>
-              {notice && (
+              {(notice || linkError) && (
                 <p role="status" className="text-xs muted mt-4">
-                  {notice}
+                  {notice || linkError}
                 </p>
               )}
             </div>
@@ -164,5 +187,13 @@ export function Auth({ kind }: { kind: "login" | "signup" }) {
         </div>
       </main>
     </div>
+  );
+}
+
+export function Auth({ kind }: { kind: "login" | "signup" }) {
+  return (
+    <Suspense fallback={null}>
+      <AuthForm kind={kind} />
+    </Suspense>
   );
 }
