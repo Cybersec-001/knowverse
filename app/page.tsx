@@ -74,8 +74,8 @@ export default function Landing() {
             <figcaption>Demo tour of the app. Sample lesson, not a processed video.</figcaption>
           </figure>
         </section>
-        <section id="how-it-works" className="landing-features">
-          <div className="eyebrow">A better way to study</div>
+        <section id="how-it-works" className="landing-features" style={{ paddingTop: 12 }}>
+          <span className="eyebrow">A better way to study</span>
           <h2 className="mt-3">One lesson. A whole learning space.</h2>
           <div>
             {[
