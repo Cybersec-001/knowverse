@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Brand } from "@/components/Brand";
 export const metadata: Metadata = {
   title: "Privacy",
   description:
@@ -9,8 +10,8 @@ export default function Privacy() {
   return (
     <main className="legal-page">
       <div className="max-w-3xl mx-auto px-6 py-12 leading-7">
-        <Link href="/" className="link-accent">
-          Knowverse home
+        <Link href="/" className="brand-link" aria-label="Knowverse home">
+          <Brand />
         </Link>
         <h1 className="text-3xl font-semibold mt-8 mb-2">Privacy</h1>
         <p className="muted text-sm mb-8">
