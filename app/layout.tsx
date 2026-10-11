@@ -4,7 +4,7 @@ import { Inter, Instrument_Serif } from "next/font/google";
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
 import {ThemeProvider} from "@/components/ThemeProvider";
-import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
 export const metadata: Metadata = {
   metadataBase: new URL("https://cybersec-001.github.io/knowverse/"),
   title: {
@@ -37,14 +37,7 @@ export default function RootLayout({
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body><ThemeProvider/>
         {children}
-        <footer className="border-t border-[var(--line)] bg-white px-6 py-5 text-xs muted flex justify-center gap-5">
-          <Link href="/privacy" className="hover:text-[var(--accent)]">
-            Privacy
-          </Link>
-          <Link href="/terms" className="hover:text-[var(--accent)]">
-            Terms
-          </Link>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

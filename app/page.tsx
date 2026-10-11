@@ -1,5 +1,6 @@
 import { Brand } from "@/components/Brand";
 import Link from "next/link";
+import { LandingNav } from "@/components/LandingNav";
 import {
   ArrowRight,
   BookOpen,
@@ -15,13 +16,7 @@ export default function Landing() {
         <Link href="/" className="brand-link">
           <Brand />
         </Link>
-        <nav className="landing-nav" aria-label="Public navigation">
-          <a href="#how-it-works">The workspace</a>
-          <Link href="/login">Log in</Link>
-          <Link href="/signup" className="btn btn-primary">
-            Get started <ArrowRight size={14} />
-          </Link>
-        </nav>
+        <LandingNav />
       </header>
       <main>
         <section className="landing-hero">

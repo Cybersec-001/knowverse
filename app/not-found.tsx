@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
+export const metadata: Metadata = {
+  title: "Page not found",
+  description: "This Knowverse page could not be found.",
+};
 export default function NotFound() {
   return (
     <main className="min-h-screen bg-white flex flex-col">

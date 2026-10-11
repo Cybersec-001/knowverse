@@ -7,6 +7,7 @@ import { api, token, backendEnabled } from "@/lib/api";
 import { Skeleton, friendlyError } from "./UI";
 import { Moon, Sun, Monitor, ArrowRight, User } from "lucide-react";
 export function Settings() {
+  const [saved, setSaved] = useState("");
   const [theme, setTheme] = useState("light");
   useEffect(() => {
     queueMicrotask(() =>
@@ -16,6 +17,7 @@ export function Settings() {
   const apply = (value: string) => {
     localStorage.setItem("knowverse-theme", value);
     setTheme(value);
+    setSaved(`Theme set to ${value}. Saved on this device.`);
     document.documentElement.setAttribute(
       "data-theme",
       value === "system"
@@ -67,6 +69,11 @@ export function Settings() {
                   </button>
                 ))}
               </div>
+              {saved && (
+                <p role="status" className="save-notice">
+                  {saved}
+                </p>
+              )}
               <p className="muted text-xs mt-5">
                 Motion follows your device&apos;s reduced-motion preference.
               </p>
