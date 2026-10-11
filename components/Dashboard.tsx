@@ -17,6 +17,7 @@ export function Dashboard() {
   const [show, setShow] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [created, setCreated] = useState("");
   const router = useRouter();
   useEffect(() => {
     if (backendEnabled()) {
@@ -93,12 +94,18 @@ export function Dashboard() {
     const saved = [fresh, ...notebooks.filter((n) => n.id.startsWith("new-"))];
     localStorage.setItem("knowverse-notebooks", JSON.stringify(saved));
     setNotebooks([fresh, ...notebooks]);
+    setCreated(`Notebook "${fresh.title}" created.`);
     setName("");
     setShow(false);
   };
   return (
     <Shell>
       <main className="page" id="notebooks">
+        {created && (
+          <p role="status" className="save-notice mb-4">
+            {created}
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-[#b64e47] mb-4">
             {error}
