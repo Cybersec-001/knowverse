@@ -140,7 +140,7 @@ export async function resolveUser(name, profile) {
   return user;
 }
 
-export function oauthRouter(signToken) {
+export function oauthRouter(signToken, recordLogin = async () => {}) {
   const router = Router();
 
   router.get('/auth/oauth/:provider/start', (req, res) => {
@@ -181,6 +181,7 @@ export function oauthRouter(signToken) {
       const profile = await p.profile(tokens);
       const user = await resolveUser(name, profile);
       clearStateCookie(res);
+      await recordLogin(user, name, req);
       // Token goes in the fragment so it never reaches server logs.
       res.redirect(`${frontend()}/auth/callback#token=${encodeURIComponent(signToken(user))}`);
     } catch (e) {
