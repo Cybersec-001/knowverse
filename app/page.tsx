@@ -21,16 +21,16 @@ export default function Landing() {
       <main>
         <section className="landing-hero">
           <div>
-            <div className="eyebrow">Your AI learning workspace</div>
+            <div className="eyebrow">For students who learn from video</div>
             <h1>
-              Turn videos
+              Turn lesson videos
               <br />
-              into <span>knowledge.</span>
+              into <span>study notes.</span>
             </h1>
             <p>
-              Paste a video source and transform it into summaries, notes,
-              questions, and an interactive learning workspace. Less replaying.
-              More understanding.
+              Paste a YouTube link or a caption file. Get a summary, editable
+              notes, exam notes, practice questions, and a tutor that answers
+              from the video itself. Less replaying. More understanding.
             </p>
             <div className="hero-actions">
               <Link href="/signup" className="btn btn-primary">
