@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms",
   description: "Terms for the Knowverse study application.",
 };
@@ -14,7 +15,7 @@ export default function Terms() {
         </Link>
         <h1 className="text-3xl font-semibold mt-8 mb-2">Terms</h1>
         <p className="muted text-sm mb-8">
-          Last updated 28 September 2026 · Contact: Deepak Tiwari,{" "}
+          Last updated 17 October 2026 · Contact: Deepak Tiwari,{" "}
           <a
             className="link-accent"
             href="mailto:deepaktiwari.cybersec@gmail.com"
