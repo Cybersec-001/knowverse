@@ -166,3 +166,9 @@ html,body{overflow-x:clip}
 @media(max-width:800px){.menu-btn{display:inline-flex}.landing-nav>.nav-login{display:none}.landing-nav{gap:10px}}
 .save-notice{color:var(--accent);font-size:12px;margin-top:12px}
 @media(max-width:800px){body:has(.bottom-nav) .site-footer{padding-bottom:88px}}
+
+/* Essential-storage notice banner */
+.storage-notice{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:60;display:flex;align-items:center;gap:16px;max-width:640px;width:calc(100% - 32px);padding:14px 18px;border-radius:16px;border:1px solid var(--glass-line);background:var(--glass-strong);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 16px 40px rgba(20,60,45,.18);font-size:13px}
+.storage-notice p{margin:0;color:var(--muted)}
+.storage-notice-btn{white-space:nowrap;min-height:38px;padding:8px 16px;flex:none}
+@media(max-width:600px){.storage-notice{flex-direction:column;align-items:stretch;text-align:center;gap:10px}}

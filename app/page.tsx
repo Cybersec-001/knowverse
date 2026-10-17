@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Brand } from "@/components/Brand";
 import Link from "next/link";
 import { LandingNav } from "@/components/LandingNav";
@@ -8,6 +9,9 @@ import {
   ScanText,
   Check,
 } from "lucide-react";
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export default function Landing() {
   return (
