@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy",
   description:
     "How Knowverse handles account information, video sources and study content.",
@@ -15,7 +16,7 @@ export default function Privacy() {
         </Link>
         <h1 className="text-3xl font-semibold mt-8 mb-2">Privacy</h1>
         <p className="muted text-sm mb-8">
-          Last updated 28 September 2026 · Contact: Deepak Tiwari,{" "}
+          Last updated 17 October 2026 · Contact: Deepak Tiwari,{" "}
           <a
             className="link-accent"
             href="mailto:deepaktiwari.cybersec@gmail.com"
@@ -32,8 +33,9 @@ export default function Privacy() {
               add, captions and transcripts, generated study materials, your
               edits and notes, and messages you send to the study tutor. An
               authentication token is stored in your browser&apos;s local
-              storage so you can stay signed in. The app does not currently
-              offer Google sign-in.
+              storage so you can stay signed in. If you sign in with Google,
+              Google gives the app your name and email address; the app never
+              sees your Google password.
             </p>
           </section>
           <section>
@@ -53,14 +55,50 @@ export default function Privacy() {
               Storage and outside services
             </h2>
             <p>
-              The website is hosted on GitHub Pages; the API and background
-              worker are hosted separately. Database, queue, file storage and AI
+              The website is hosted on Vercel; the API and background worker
+              are hosted separately. Database, queue, file storage and AI
               services process information needed to run the app. YouTube
               handles videos viewed through its player under its own policies.
               These services may keep technical logs or backups under their own
               policies. This site does not currently install a visitor-analytics
               tracker or an advertising cookie banner. An authentication token
               is stored in local storage, not in a site analytics cookie.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">
+              Cookies and local storage
+            </h2>
+            <p>
+              Knowverse uses only essential browser storage to run: your
+              sign-in token, your theme choice and your saved notebooks list
+              stay in your browser&apos;s local storage. The site does not use
+              analytics cookies, advertising cookies or third-party trackers.
+              You can clear this storage at any time in your browser settings,
+              which signs you out.
+            </p>
+          </section>
+          <section>
+            <h2 className="text-xl font-semibold">
+              Your rights under the DPDP Act 2023
+            </h2>
+            <p>
+              Under India&apos;s Digital Personal Data Protection Act 2023, the
+              app processes your personal data with your consent, which you can
+              withdraw at any time by emailing us; withdrawal does not affect
+              processing already done. You can ask to access, correct or erase
+              your personal data, and you can nominate someone to act for you
+              if you are unable to. For any grievance about how your data is
+              handled, contact Deepak Tiwari at{" "}
+              <a
+                className="link-accent"
+                href="mailto:deepaktiwari.cybersec@gmail.com"
+              >
+                deepaktiwari.cybersec@gmail.com
+              </a>
+              ; we will look into it and reply. The service is meant for users
+              who are 18 or older; if you are younger, please use it only with
+              a parent or guardian&apos;s consent.
             </p>
           </section>
           <section>
