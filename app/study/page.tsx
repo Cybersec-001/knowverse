@@ -5,6 +5,8 @@ import { Workspace } from "@/components/Workspace";
 import { Skeleton, EmptyState } from "@/components/UI";
 import Link from "next/link";
 import { LiveWorkspace } from "@/components/LiveWorkspace";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 function CurrentStudy() {
   const params = useSearchParams(),
     notebookId = params.get("notebook"),
@@ -26,7 +28,7 @@ function CurrentStudy() {
       title="A lesson is waiting to be opened"
       body="Choose a video from your notebook to see its summary, notes and study tools."
     >
-      <Link className="btn btn-primary" href="/dashboard">
+      <Link className={cn(buttonVariants({ variant: "default" }))} href="/dashboard">
         Open notebooks
       </Link>
     </EmptyState>
