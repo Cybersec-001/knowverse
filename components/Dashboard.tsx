@@ -7,6 +7,8 @@ import { Shell } from "./Shell";
 import { api, backendEnabled, token } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { initialNotebooks, Notebook } from "@/lib/data";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 export function Dashboard() {
   const [notebooks, setNotebooks] = useState<Notebook[]>(
     backendEnabled() ? [] : initialNotebooks,
@@ -121,7 +123,7 @@ export function Dashboard() {
               Everything you’re learning, all in one place.
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShow(true)}>
+          <button className={cn(buttonVariants({ variant: "default" }))} onClick={() => setShow(true)}>
             <Plus size={18} /> New notebook
           </button>
         </div>
@@ -243,7 +245,7 @@ export function Dashboard() {
               Collect your videos in one place and turn them into something you
               can study.
             </p>
-            <button className="btn btn-primary" onClick={() => setShow(true)}>
+            <button className={cn(buttonVariants({ variant: "default" }))} onClick={() => setShow(true)}>
               <Plus size={16} /> New notebook
             </button>
           </div>
@@ -259,7 +261,7 @@ export function Dashboard() {
                 Biology foundations · 18:42 min
               </p>
             </div>
-            <Link href="/study?demo=1" className="btn btn-quiet">
+            <Link href="/study?demo=1" className={cn(buttonVariants({ variant: "glass" }))}>
               <Play size={14} /> Continue studying <ChevronRight size={14} />
             </Link>
           </div>
@@ -294,7 +296,7 @@ export function Dashboard() {
             )}
             <button
               disabled={creating}
-              className="btn btn-primary w-full mt-6"
+              className={cn(buttonVariants({ variant: "default" }), "w-full mt-6")}
               type="submit"
             >
               {creating ? "Creating..." : "Create notebook"}
