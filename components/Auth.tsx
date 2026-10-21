@@ -6,6 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { friendlyError } from "./UI";
 import { API, api, backendEnabled } from "@/lib/api";
+import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 const socialProviders = [
   { id: "google", label: "Google" },
@@ -58,7 +61,7 @@ function AuthForm({ kind }: { kind: "login" | "signup" }) {
                       <a
                         key={p.id}
                         href={`${API}/auth/oauth/${p.id}/start`}
-                        className="btn btn-quiet w-full"
+                        className={cn(buttonVariants({ variant: "glass" }), "w-full")}
                       >
                         Continue with {p.label}
                       </a>
@@ -104,7 +107,7 @@ function AuthForm({ kind }: { kind: "login" | "signup" }) {
                 >
                   Email address
                 </label>
-                <input
+                <Input
                   required
                   type="email"
                   id="email"
@@ -120,7 +123,7 @@ function AuthForm({ kind }: { kind: "login" | "signup" }) {
                 >
                   Password
                 </label>
-                <input
+                <Input
                   required
                   minLength={kind === "signup" ? 8 : 1}
                   maxLength={100}
@@ -141,7 +144,7 @@ function AuthForm({ kind }: { kind: "login" | "signup" }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn-primary w-full"
+                  className={cn(buttonVariants({ variant: "default" }), "w-full")}
                 >
                   {loading
                     ? "Please wait"
