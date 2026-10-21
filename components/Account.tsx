@@ -6,6 +6,8 @@ import { Shell } from "./Shell";
 import { api, token, backendEnabled } from "@/lib/api";
 import { Skeleton, friendlyError } from "./UI";
 import { Moon, Sun, Monitor, ArrowRight, User } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 export function Settings() {
   const [saved, setSaved] = useState("");
   const [theme, setTheme] = useState("light");
@@ -84,7 +86,7 @@ export function Settings() {
                 Your notebooks and study materials belong to your signed-in
                 account.
               </p>
-              <Link className="btn btn-quiet mt-5" href="/profile">
+              <Link className={cn(buttonVariants({ variant: "glass" }), "mt-5")} href="/profile">
                 View profile <ArrowRight size={15} />
               </Link>
               <div className="divider my-5" />
@@ -183,11 +185,11 @@ export function Profile() {
             Activity tracking is not collected by this version.
           </p>
           <div className="flex gap-3 flex-wrap mt-5">
-            <Link href="/dashboard" className="btn btn-primary">
+            <Link href="/dashboard" className={cn(buttonVariants({ variant: "default" }))}>
               Open notebooks <ArrowRight size={15} />
             </Link>
             <button
-              className="btn btn-quiet"
+              className={cn(buttonVariants({ variant: "glass" }))}
               onClick={() => {
                 localStorage.removeItem("knowverse-token");
                 router.push("/login");
