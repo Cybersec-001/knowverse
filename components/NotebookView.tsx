@@ -18,6 +18,8 @@ import { api, backendEnabled, token } from "@/lib/api";
 import { subscribe } from "@/lib/socket";
 import { useRouter } from "next/navigation";
 import { videos, Video } from "@/lib/data";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 export function NotebookView({ id }: { id: string }) {
   const [items, setItems] = useState<Video[]>(
     !backendEnabled() && id === "biology" ? videos : [],
@@ -218,7 +220,7 @@ export function NotebookView({ id }: { id: string }) {
               study collection
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShow(true)}>
+          <button className={cn(buttonVariants({ variant: "default" }))} onClick={() => setShow(true)}>
             <Plus size={18} /> Paste a video link
           </button>
         </div>
@@ -290,7 +292,7 @@ export function NotebookView({ id }: { id: string }) {
                         ? "Open video to see failure and upload captions"
                         : "Open video"
                     }
-                    className="btn btn-quiet !p-2 !min-h-0 ml-auto sm:ml-0"
+                    className={cn(buttonVariants({ variant: "glass" }), "!p-2 !min-h-0 ml-auto sm:ml-0")}
                   >
                     <ChevronRight size={18} />
                   </Link>
@@ -310,7 +312,7 @@ export function NotebookView({ id }: { id: string }) {
               Add a video URL or upload a file to start building your study
               package.
             </p>
-            <button className="btn btn-primary" onClick={() => setShow(true)}>
+            <button className={cn(buttonVariants({ variant: "default" }))} onClick={() => setShow(true)}>
               <Plus size={16} /> Add content
             </button>
           </div>
@@ -333,7 +335,7 @@ export function NotebookView({ id }: { id: string }) {
               <button
                 type="button"
                 className={
-                  "btn " + (mode === "url" ? "btn-primary" : "btn-quiet")
+                  buttonVariants({ variant: mode === "url" ? "default" : "glass" })
                 }
                 onClick={() => setMode("url")}
               >
@@ -343,7 +345,7 @@ export function NotebookView({ id }: { id: string }) {
               <button
                 type="button"
                 className={
-                  "btn " + (mode === "file" ? "btn-primary" : "btn-quiet")
+                  buttonVariants({ variant: mode === "file" ? "default" : "glass" })
                 }
                 onClick={() => setMode("file")}
               >
@@ -419,7 +421,7 @@ export function NotebookView({ id }: { id: string }) {
                 {error}
               </p>
             )}
-            <button disabled={adding} className="btn btn-primary w-full mt-6">
+            <button disabled={adding} className={cn(buttonVariants({ variant: "default" }), "w-full mt-6")}>
               {adding ? "Adding your source..." : "Generate knowledge"}
             </button>
             <p className="muted text-xs mt-4">
