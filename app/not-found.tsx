@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Brand } from "@/components/Brand";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Page not found",
   description: "This Knowverse page could not be found.",
@@ -19,7 +21,7 @@ export default function NotFound() {
         <p className="muted mt-3">
           The address may have changed or the page may have moved.
         </p>
-        <Link href="/" className="btn btn-primary mx-auto mt-7">
+        <Link href="/" className={cn(buttonVariants({ variant: "default" }), "mx-auto mt-7")}>
           Back to Knowverse
         </Link>
       </section>
