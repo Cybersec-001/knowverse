@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 export function LandingNav() {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -12,9 +13,11 @@ export function LandingNav() {
         <Link href="/login" className="nav-login">
           Log in
         </Link>
-        <Link href="/signup" className="btn btn-primary">
-          Get started <ArrowRight size={14} />
-        </Link>
+        <Button asChild size="sm">
+          <Link href="/signup">
+            Get started <ArrowRight size={14} />
+          </Link>
+        </Button>
         <button
           type="button"
           className="menu-btn"
