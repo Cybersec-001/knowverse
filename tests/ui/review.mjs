@@ -248,7 +248,7 @@ const notebooks = [
   ]) {
     await page.setViewportSize({ width, height });
     await page.goto(BASE + "/");
-    await page.getByRole("heading", { name: /Turn videos/ }).waitFor();
+    await page.getByRole("heading", { name: /Turn lesson videos/ }).waitFor();
     await shot(`phase-04-home-${size}`);
     for (const route of [
       "login",
@@ -404,7 +404,7 @@ const notebooks = [
   await page.goto(BASE + "/");
   assert.equal(
     await page
-      .locator(".workspace-preview")
+      .locator(".demo-frame")
       .evaluate((el) => getComputedStyle(el).transform),
     "none",
   );
