@@ -19,6 +19,8 @@ import { Dialog, friendlyError } from "./UI";
 import { Shell } from "./Shell";
 import { YouTubePlayer } from "./YouTubePlayer";
 import { SummaryEditor } from "./SummaryEditor";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 type Source = { start_ts: number; end_ts: number };
 type Note = {
   heading: string;
@@ -552,7 +554,7 @@ export function LiveWorkspace({
             </div>
             <div className="flex gap-2 self-start">
               <button
-                className="btn btn-quiet"
+                className={cn(buttonVariants({ variant: "glass" }))}
                 disabled={tab === "tutor"}
                 onClick={() => {
                   setExportState("");
@@ -835,7 +837,7 @@ export function LiveWorkspace({
                       continue.
                     </p>
                     <button
-                      className="btn btn-quiet mt-3"
+                      className={cn(buttonVariants({ variant: "glass" }), "mt-3")}
                       disabled={busy}
                       onClick={async () => {
                         setBusy(true);
@@ -868,7 +870,7 @@ export function LiveWorkspace({
                     />
                     <button
                       type="button"
-                      className="btn btn-primary mt-3"
+                      className={cn(buttonVariants({ variant: "default" }), "mt-3")}
                       disabled={!captionFile || captionBusy}
                       onClick={uploadCaptions}
                     >
@@ -915,7 +917,7 @@ export function LiveWorkspace({
                     </p>
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className={cn(buttonVariants({ variant: "default" }))}
                       disabled={summaryState === "saving" || !summaryTouched}
                       onClick={saveSummary}
                     >
@@ -935,7 +937,7 @@ export function LiveWorkspace({
                       .map((b, i) => (
                         <button
                           key={`${b.source_chunk_id}-${i}`}
-                          className="btn btn-quiet !py-1 text-xs"
+                          className={cn(buttonVariants({ variant: "glass" }), "!py-1 text-xs")}
                           onClick={() =>
                             jump(
                               Number(
@@ -963,7 +965,7 @@ export function LiveWorkspace({
                     <h2>Ask KNOWVERSE</h2>
                   </div>
                   <button
-                    className="btn btn-quiet text-xs"
+                    className={cn(buttonVariants({ variant: "glass" }), "text-xs")}
                     disabled={busy || !chat.length}
                     onClick={() => setChat([])}
                   >
@@ -1051,7 +1053,7 @@ export function LiveWorkspace({
                   <button
                     disabled={busy || !message.trim()}
                     aria-label="Send question"
-                    className="btn btn-primary"
+                    className={cn(buttonVariants({ variant: "default" }))}
                   >
                     <Send size={16} />
                   </button>
@@ -1112,14 +1114,14 @@ export function LiveWorkspace({
                     )}
                     <div className="mt-5 flex gap-3">
                       <button
-                        className="btn btn-quiet"
+                        className={cn(buttonVariants({ variant: "glass" }))}
                         disabled={question === 0}
                         onClick={() => setQuestion(question - 1)}
                       >
                         Previous
                       </button>
                       <button
-                        className="btn btn-primary"
+                        className={cn(buttonVariants({ variant: "default" }))}
                         disabled={question === qs.length - 1}
                         onClick={() => setQuestion(question + 1)}
                       >
@@ -1232,7 +1234,7 @@ export function LiveWorkspace({
                       />
                       <div className="flex gap-3 mt-2">
                         <button
-                          className="btn btn-quiet !py-1 text-xs"
+                          className={cn(buttonVariants({ variant: "glass" }), "!py-1 text-xs")}
                           onClick={() =>
                             editOwn(n.id, ownDrafts[n.id] ?? n.text)
                           }
@@ -1259,7 +1261,7 @@ export function LiveWorkspace({
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                     />
-                    <button className="btn btn-primary mt-3" type="submit">
+                    <button className={cn(buttonVariants({ variant: "default" }), "mt-3")} type="submit">
                       Save personal note
                     </button>
                   </form>
@@ -1328,14 +1330,14 @@ export function LiveWorkspace({
           </p>
           <div className="flex gap-3 mt-6">
             <button
-              className="btn btn-primary"
+              className={cn(buttonVariants({ variant: "default" }))}
               disabled={exportState === "Generating document..."}
               onClick={() => openExport("pdf")}
             >
               Download PDF
             </button>
             <button
-              className="btn btn-quiet"
+              className={cn(buttonVariants({ variant: "glass" }))}
               disabled={exportState === "Generating document..."}
               onClick={() => openExport("doc")}
             >
