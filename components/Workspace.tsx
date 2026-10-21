@@ -19,6 +19,8 @@ import {
 import { Shell } from "./Shell";
 import { StudyScene } from "./StudyScene";
 import { summaries, notes, examNotes, questions, transcript } from "@/lib/data";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 type Block = { id: string; heading: string; text: string; time: string };
 type Tab = "Summary" | "Notes" | "Exam notes" | "MCQ" | "Tutor";
 const tabs: Tab[] = ["Summary", "Notes", "Exam notes", "MCQ", "Tutor"];
@@ -203,7 +205,7 @@ export function Workspace() {
             <div className="flex gap-2 relative">
               <div className="relative">
                 <button
-                  className="btn btn-quiet"
+                  className={cn(buttonVariants({ variant: "glass" }))}
                   onClick={() => setExportOpen(!exportOpen)}
                 >
                   <Download size={16} /> Export <ChevronDown size={14} />
@@ -234,7 +236,7 @@ export function Workspace() {
               <div className="relative">
                 <button
                   aria-label="More options"
-                  className="btn btn-quiet !px-3"
+                  className={cn(buttonVariants({ variant: "glass" }), "!px-3")}
                   onClick={() => setMenu(!menu)}
                 >
                   <MoreHorizontal size={18} />
@@ -394,7 +396,7 @@ export function Workspace() {
                         ].map((v) => (
                           <button
                             key={v}
-                            className="btn btn-quiet !min-h-0 !py-2 text-xs"
+                            className={cn(buttonVariants({ variant: "glass" }), "!min-h-0 !py-2 text-xs")}
                             onClick={() => ask(v)}
                           >
                             {v}
@@ -419,7 +421,7 @@ export function Workspace() {
                       <button
                         type="submit"
                         aria-label="Send question"
-                        className="btn btn-primary"
+                        className={cn(buttonVariants({ variant: "default" }))}
                       >
                         <Send size={16} />
                       </button>
@@ -500,14 +502,14 @@ export function Workspace() {
                       )}
                       <div className="flex justify-between gap-3 mt-7">
                         <button
-                          className="btn btn-quiet"
+                          className={cn(buttonVariants({ variant: "glass" }))}
                           disabled={qIndex === 0}
                           onClick={() => setQIndex(qIndex - 1)}
                         >
                           Previous
                         </button>
                         <button
-                          className="btn btn-primary"
+                          className={cn(buttonVariants({ variant: "default" }))}
                           onClick={() => {
                             if (qIndex < questions.length - 1)
                               setQIndex(qIndex + 1);
@@ -584,13 +586,13 @@ export function Workspace() {
                                   />
                                   <div className="flex gap-2 mt-2">
                                     <button
-                                      className="btn btn-primary !py-1"
+                                      className={cn(buttonVariants({ variant: "default" }), "!py-1")}
                                       onClick={() => updateBlock(b.id, draft)}
                                     >
                                       Save note
                                     </button>
                                     <button
-                                      className="btn btn-quiet !py-1"
+                                      className={cn(buttonVariants({ variant: "glass" }), "!py-1")}
                                       onClick={() => setEditing(null)}
                                     >
                                       Cancel
@@ -676,7 +678,7 @@ export function Workspace() {
                 <div className="divider my-6" />
                 <button
                   onClick={() => setTab("MCQ")}
-                  className="w-full btn btn-quiet"
+                  className={cn(buttonVariants({ variant: "glass" }), "w-full")}
                 >
                   Try a quick question <ChevronRight size={14} />
                 </button>
