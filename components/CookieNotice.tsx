@@ -1,5 +1,7 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const KEY = "knowverse-storage-notice-ok";
 
@@ -36,7 +38,7 @@ export function CookieNotice() {
         .
       </p>
       <button
-        className="btn btn-primary storage-notice-btn"
+        className={cn(buttonVariants({ variant: "default" }), "storage-notice-btn")}
         onClick={() => {
           try {
             localStorage.setItem(KEY, "1");
