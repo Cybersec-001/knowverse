@@ -15,6 +15,8 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, backendEnabled, token } from "@/lib/api";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 type SearchItem = { id: string; title: string };
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname(),
@@ -229,7 +231,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </p>
             )}
             <button
-              className="btn btn-quiet mt-4"
+              className={cn(buttonVariants({ variant: "glass" }), "mt-4")}
               onClick={() => {
                 setOpen(false);
                 router.push("/dashboard");
