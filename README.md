@@ -2,6 +2,10 @@
 
 A responsive Next.js 16 / React 19 / Tailwind CSS 4 prototype based on the Knowverse UI/UX brief. This is a frontend demo with sample biology data, not an authentication or AI service.
 
+## Live site
+
+The deployed app is at [knowverse.dpdns.org](https://knowverse.dpdns.org).
+
 ## Run locally
 
 Frontend demo, no backend needed:
