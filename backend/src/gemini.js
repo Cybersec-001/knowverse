@@ -1,6 +1,7 @@
 import {openrouterJson} from './openrouter.js';
 import {groqJson} from './groq.js';
 import {youtubeId} from './captions.js';
+import {studyStylePrompt} from './summary-style.js';
 /** Gemini provider implements the same surface as the OpenAI and mock adapters. */
 const videoMime = {
   ".mp4": "video/mp4",
@@ -314,6 +315,10 @@ export function geminiProvider() {
       const context = chunks
         .map((c) => `CHUNK ${c.id} [${c.start_ts}-${c.end_ts}]: ${c.text}`)
         .join("\n");
+      if (type === "summary" || type === "notes") {
+        const r = await json(studyStylePrompt(type), context);
+        return r.items ?? [];
+      }
       const schema =
         type === "mcq"
           ? 'Return {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"source_chunk_id":"UUID","explanation":"..."}]}. Include 3-5 questions.'

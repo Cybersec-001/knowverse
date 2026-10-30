@@ -1,4 +1,5 @@
-import 'dotenv/config';import {createHash} from 'node:crypto';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds,validateTimedSegments} from './retrieval.js';import {youtubeVideoInfo,getYoutubeSegments,TranscriptError} from './youtube-transcript.js';import {load} from './storage.js';import {publishStatus,publishArtifact} from './events.js';
+import 'dotenv/config';import {createHash} from 'node:crypto';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds,validateTimedSegments} from './retrieval.js';
+import {sanitizeStudyItems,hasCitedItem} from './summary-style.js';import {youtubeVideoInfo,getYoutubeSegments,TranscriptError} from './youtube-transcript.js';import {load} from './storage.js';import {publishStatus,publishArtifact} from './events.js';
 const steps=['summary','notes','exam_notes','mcq'];
 export async function setStatus(id,status,error=null){await query('UPDATE videos SET status=$2,error=$3,updated_at=now() WHERE id=$1',[id,status,error]);await publishStatus(id,status)}
 /** Cover every part of long transcripts, rather than retrieving only the first/top eight chunks. */
@@ -31,8 +32,8 @@ export async function makeArtifact(videoId,type){
   }
   console.info('artifact.generate.done',JSON.stringify({videoId,type,window:index+1,elapsed_ms:Date.now()-started,items:items?.length}));
   if(!Array.isArray(items)||!items.length)throw new Error(`Empty ${type} output`);
-  items=items.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>validIds.has(id)));
-  if(!items.length)throw new Error(`No cited ${type} items`);
+  if(type==='summary'||type==='notes'){items=sanitizeStudyItems(items,validIds);if(!hasCitedItem(items))throw new Error(`No cited ${type} items`)}
+  else{items=items.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>validIds.has(id)));if(!items.length)throw new Error(`No cited ${type} items`)}
   await query('INSERT INTO artifact_windows(video_id,type,window_index,content,window_fingerprint) VALUES($1,$2,$3,$4::jsonb,$5) ON CONFLICT(video_id,type,window_index) DO UPDATE SET content=EXCLUDED.content,window_fingerprint=EXCLUDED.window_fingerprint,created_at=now()',[videoId,type,index,JSON.stringify(items),fingerprint]);
   parts.push(items);
  }
@@ -48,8 +49,8 @@ export async function makeArtifact(videoId,type){
   const started=Date.now();
   const reduced=await p.generate('summary',reducedInput);
   const allowed=new Set(reducedInput.map(c=>c.id));
-  const verified=reduced.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>allowed.has(id)));
-  if(!verified.length)throw new Error('Reduced summary lacks valid source citations');
+  const verified=sanitizeStudyItems(reduced,allowed);
+  if(!hasCitedItem(verified))throw new Error('Reduced summary lacks valid source citations');
   content=verified;
   console.info('artifact.reduce.done',JSON.stringify({videoId,elapsed_ms:Date.now()-started,items:content.length}));
  }
@@ -76,8 +77,8 @@ export async function makePreliminarySummary(videoId){
  const p=provider();
  const items=await p.generate('summary',chunks);
  const valid=new Set(chunks.map(c=>c.id));
- const content=items.filter(item=>sourceIds([item]).length&&sourceIds([item]).every(id=>valid.has(id)));
- if(!content.length)throw new Error('Preliminary summary lacks valid source citations');
+ const content=sanitizeStudyItems(items,valid);
+ if(!hasCitedItem(content))throw new Error('Preliminary summary lacks valid source citations');
  await query('INSERT INTO preliminary_summaries(video_id,content,covered_chunks,total_chunks) VALUES($1,$2::jsonb,$3,$4) ON CONFLICT(video_id) DO UPDATE SET content=EXCLUDED.content,covered_chunks=EXCLUDED.covered_chunks,total_chunks=EXCLUDED.total_chunks,created_at=now()',[videoId,JSON.stringify(content),chunks.length,count.total]);
  await publishArtifact(videoId,'preliminary_summary');
  console.info('preliminary.summary.done',JSON.stringify({videoId,elapsed_ms:Date.now()-started,covered:chunks.length,total:count.total,items:content.length}));
