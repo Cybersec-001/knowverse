@@ -21,10 +21,16 @@ import { YouTubePlayer } from "./YouTubePlayer";
 import { SummaryEditor } from "./SummaryEditor";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  boxHeading,
+  emphasizeLeads,
+  sectionKind,
+} from "@/lib/notes-document";
 type Source = { start_ts: number; end_ts: number };
 type Note = {
   heading: string;
-  bullets: { text: string; source_chunk_id: string }[];
+  kind?: string;
+  bullets: { text: string; source_chunk_id?: string }[];
 };
 type Question = {
   question: string;
@@ -650,7 +656,7 @@ export function LiveWorkspace({
                     b.text.toLowerCase().includes(sourceFilter.toLowerCase()),
                   )
                   .map((b, i) => {
-                    const source = extractive?.sources[b.source_chunk_id];
+                    const source = extractive?.sources[b.source_chunk_id ?? ""];
                     return (
                       <button
                         key={i}
@@ -766,7 +772,7 @@ export function LiveWorkspace({
                               onClick={() =>
                                 jump(
                                   Number(
-                                    extractive.sources[b.source_chunk_id]
+                                    extractive.sources[b.source_chunk_id ?? ""]
                                       ?.start_ts ?? 0,
                                   ),
                                 )
@@ -775,7 +781,7 @@ export function LiveWorkspace({
                               Source{" "}
                               {fmt(
                                 Number(
-                                  extractive.sources[b.source_chunk_id]
+                                  extractive.sources[b.source_chunk_id ?? ""]
                                     ?.start_ts ?? 0,
                                 ),
                               )}
@@ -809,7 +815,7 @@ export function LiveWorkspace({
                                 onClick={() =>
                                   jump(
                                     Number(
-                                      preliminary.sources[b.source_chunk_id]
+                                      preliminary.sources[b.source_chunk_id ?? ""]
                                         ?.start_ts ?? 0,
                                     ),
                                   )
@@ -934,6 +940,7 @@ export function LiveWorkspace({
                   <div className="flex flex-wrap gap-2">
                     {((art?.artifact.content as Note[]) ?? [])
                       .flatMap((n) => n.bullets ?? [])
+                      .filter((b) => Boolean(b.source_chunk_id))
                       .map((b, i) => (
                         <button
                           key={`${b.source_chunk_id}-${i}`}
@@ -941,7 +948,7 @@ export function LiveWorkspace({
                           onClick={() =>
                             jump(
                               Number(
-                                art?.sources[b.source_chunk_id]?.start_ts ?? 0,
+                                art?.sources[b.source_chunk_id ?? ""]?.start_ts ?? 0,
                               ),
                             )
                           }
@@ -949,7 +956,7 @@ export function LiveWorkspace({
                           <Play size={11} fill="currentColor" />{" "}
                           {fmt(
                             Number(
-                              art?.sources[b.source_chunk_id]?.start_ts ?? 0,
+                              art?.sources[b.source_chunk_id ?? ""]?.start_ts ?? 0,
                             ),
                           )}
                         </button>
@@ -1166,18 +1173,97 @@ export function LiveWorkspace({
                   </button>
                 </div>
                 {items.length ? (
+                  tab === "notes" ? (
+                    <article
+                    className="card notes-document p-5 md:p-7"
+                    style={{
+                      border:
+                        "2px solid color-mix(in srgb, var(--accent) 45%, var(--line))",
+                    }}
+                  >
+                      <div className="nd-title">{title}</div>
+                      {items.map((item, i) => {
+                        const n = item as Note;
+                        const kind = sectionKind(n.heading, n.kind);
+                        if (kind === "takeaway" || kind === "practice") {
+                          return (
+                            <section
+                              key={i}
+                              className={
+                                kind === "takeaway" ? "nd-takeaway" : "nd-practice"
+                              }
+                            >
+                              <h3 className="nd-heading">
+                                {boxHeading(n.heading)}
+                              </h3>
+                              {kind === "practice" && (
+                                <p className="nd-practice-label">
+                                  k की तरफ से suggested exercises - speaker ने ये
+                                  नहीं कहीं.
+                                </p>
+                              )}
+                              {kind === "practice" ? (
+                                <ul className="nd-list">
+                                  {n.bullets?.map((b, j) => (
+                                    <li key={j}>{b.text}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                n.bullets?.map((b, j) => (
+                                  <p key={j} className="nd-body">
+                                    {b.text}
+                                  </p>
+                                ))
+                              )}
+                            </section>
+                          );
+                        }
+                        return (
+                          <section
+                            key={i}
+                            className={
+                              "nd-section" + (kind === "intro" ? " nd-intro" : "")
+                            }
+                          >
+                            <h3 className="nd-heading">{n.heading}</h3>
+                            {n.bullets?.map((b, j) => (
+                              <p key={j} className="nd-body">
+                                {emphasizeLeads(b.text).map((part, k) =>
+                                  part.strong ? (
+                                    <span key={k} className="nd-lead">
+                                      {part.text}
+                                    </span>
+                                  ) : (
+                                    <span key={k}>{part.text}</span>
+                                  ),
+                                )}
+                              </p>
+                            ))}
+                          </section>
+                        );
+                      })}
+                    </article>
+                  ) : (
                   items.map((item, i) => {
                     const n = item as Note;
                     return (
                       <article key={i} className="card p-5 mb-3">
                         <h3 className="font-semibold">{n.heading}</h3>
+                        {n.kind === "practice" && (
+                          <p className="muted text-xs mt-1">
+                            k की तरफ से suggested exercises - speaker ने ये नहीं
+                            कहीं.
+                          </p>
+                        )}
                         {n.bullets?.map((b, j) => (
                           <div key={j} className="mt-3">
                             <p className="muted leading-6">
                               {editing === `${i}-${j}` ? draft : b.text}
                             </p>
                             <div className="mt-2">
-                              {source(b.source_chunk_id)}{" "}
+                              {b.source_chunk_id
+                                ? source(b.source_chunk_id)
+                                : null}{" "}
                               <button
                                 className="icon-btn text-xs ml-2"
                                 onClick={() => {
@@ -1207,6 +1293,7 @@ export function LiveWorkspace({
                       </article>
                     );
                   })
+                  )
                 ) : (
                   <p className="muted">This artifact is not ready yet.</p>
                 )}

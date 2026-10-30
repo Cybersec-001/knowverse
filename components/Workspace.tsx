@@ -21,6 +21,12 @@ import { StudyScene } from "./StudyScene";
 import { summaries, notes, examNotes, questions, transcript } from "@/lib/data";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  boxHeading,
+  emphasizeLeads,
+  sectionKind,
+  splitPracticeItems,
+} from "@/lib/notes-document";
 type Block = { id: string; heading: string; text: string; time: string };
 type Tab = "Summary" | "Notes" | "Exam notes" | "MCQ" | "Tutor";
 const tabs: Tab[] = ["Summary", "Notes", "Exam notes", "MCQ", "Tutor"];
@@ -172,7 +178,7 @@ export function Workspace() {
   )
     .map(
       ([name, bs]) =>
-        `<h2>${name}</h2>${bs.map((b) => `<h3>${b.heading} (${b.time})</h3><p>${b.text}</p>`).join("")}`,
+        `<h2>${name}</h2>${bs.map((b) => `<h3>${b.heading}</h3><p>${b.text}</p>`).join("")}`,
     )
     .join("")}`;
   return (
@@ -555,9 +561,9 @@ export function Workspace() {
                         </h2>
                         <p className="muted mt-1">
                           {tab === "Summary"
-                            ? "The essentials, linked to the source video."
+                            ? "The essentials, on one clean page."
                             : tab === "Notes"
-                              ? "Key concepts you can edit and make your own."
+                              ? "Key concepts, on one clean page."
                               : "High-yield points for revision."}
                         </p>
                       </div>
@@ -565,6 +571,75 @@ export function Workspace() {
                         {blocks[tab].length} points
                       </span>
                     </div>
+                    {tab !== "Exam notes" ? (
+                      <article
+                      className="card notes-document px-5 md:px-7 py-6"
+                      style={{
+                        border:
+                          "2px solid color-mix(in srgb, var(--accent) 45%, var(--line))",
+                      }}
+                    >
+                        <div className="nd-title">
+                          The cell: Structure and function
+                        </div>
+                        {blocks[tab].map((b) => {
+                          const kind = sectionKind(b.heading);
+                          if (kind === "takeaway" || kind === "practice") {
+                            return (
+                              <section
+                                key={b.id}
+                                className={
+                                  kind === "takeaway"
+                                    ? "nd-takeaway"
+                                    : "nd-practice"
+                                }
+                              >
+                                <h3 className="nd-heading">
+                                  {boxHeading(b.heading)}
+                                </h3>
+                                {kind === "practice" && (
+                                  <p className="nd-practice-label">
+                                    k की तरफ से suggested exercises - speaker ने
+                                    ये नहीं कहीं.
+                                  </p>
+                                )}
+                                {kind === "practice" ? (
+                                  <ul className="nd-list">
+                                    {splitPracticeItems(b.text).map((t, j) => (
+                                      <li key={j}>{t}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="nd-body">{b.text}</p>
+                                )}
+                              </section>
+                            );
+                          }
+                          return (
+                            <section
+                              key={b.id}
+                              className={
+                                "nd-section" +
+                                (kind === "intro" ? " nd-intro" : "")
+                              }
+                            >
+                              <h3 className="nd-heading">{b.heading}</h3>
+                              <p className="nd-body">
+                                {emphasizeLeads(b.text).map((part, k) =>
+                                  part.strong ? (
+                                    <span key={k} className="nd-lead">
+                                      {part.text}
+                                    </span>
+                                  ) : (
+                                    <span key={k}>{part.text}</span>
+                                  ),
+                                )}
+                              </p>
+                            </section>
+                          );
+                        })}
+                      </article>
+                    ) : (
                     <div className="space-y-3">
                       {blocks[tab].map((b, i) => (
                         <article key={b.id} className="card px-5 md:px-7 py-5">
@@ -631,6 +706,7 @@ export function Workspace() {
                         </article>
                       ))}
                     </div>
+                    )}
                     <p className="text-xs muted mt-5">
                       AI-generated demo content. Check the linked video moment
                       before relying on a point.
