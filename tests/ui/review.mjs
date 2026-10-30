@@ -31,6 +31,47 @@ const content = [
     ],
   },
 ];
+const summaryContent = [
+  {
+    heading: "मुख्य विचार",
+    bullets: [
+      {
+        text: "Cells जीवन की basic units हैं - हर organism एक या ज़्यादा cells से बना है, और हर structure का अपना role है।",
+        source_chunk_id: "c1",
+      },
+    ],
+  },
+  {
+    heading: "1) Cell membrane: selective boundary",
+    bullets: [
+      {
+        text: "Cell membrane तय करती है कि कौन-से substances cell के अंदर-बाहर जाएंगे।",
+        source_chunk_id: "c1",
+      },
+      {
+        text: "उदाहरण: gatekeeper की तरह membrane हर चीज़ को pass नहीं होने देती।",
+        source_chunk_id: "c2",
+      },
+    ],
+  },
+  {
+    heading: "निचोड़",
+    bullets: [
+      {
+        text: "Membrane सुरक्षा देती है, nucleus निर्देश देता है, mitochondria energy - हर part का साफ़ काम है।",
+        source_chunk_id: "c2",
+      },
+    ],
+  },
+  {
+    heading: "प्रैक्टिस (k की तरफ से)",
+    kind: "practice",
+    bullets: [
+      { text: "Cell के 3 parts का काम अपने शब्दों में 1-1 लाइन में लिखें।" },
+      { text: "Cell membrane को किसी रोज़मर्रा की चीज़ से compare करके समझाएं।" },
+    ],
+  },
+];
 const notebooks = [
   {
     id: "n1",
@@ -121,13 +162,16 @@ const notebooks = [
       data = {
         edit: {
           content:
-            "<h2>The cell, in context</h2><p>Cells are the basic units of life. Their structures work together to sustain living organisms.</p><h2>What to remember</h2><p>The membrane controls exchange; the nucleus stores genetic information; mitochondria release energy.</p>",
+            "<h2>मुख्य विचार</h2><p>Cells जीवन की basic units हैं - हर structure का अपना role है।</p><h2>1) Cell membrane: selective boundary</h2><p>Membrane तय करती है कि कौन-से substances अंदर-बाहर जाएंगे। उदाहरण: gatekeeper की तरह।</p><h2>निचोड़</h2><p>हर part का साफ़ काम है।</p><h2>प्रैक्टिस (k की तरफ से)</h2><p>Cell के 3 parts का काम अपने शब्दों में लिखें।</p>",
         },
       };
     else if (path.includes("/artifacts/"))
       data = {
         artifact: {
-          content: path.endsWith("/mcq")
+          content:
+            path.endsWith("/summary") || path.endsWith("/notes")
+              ? summaryContent
+              : path.endsWith("/mcq")
             ? [
                 {
                   question:
@@ -336,6 +380,22 @@ const notebooks = [
   await shot("phase-09-practice-desktop");
   checks++;
   await page.getByRole("tab", { name: "Notes", exact: true }).click();
+  await page.getByText("प्रैक्टिस (k की तरफ से):").waitFor();
+  await page.getByText("मुख्य विचार", { exact: true }).first().waitFor();
+  checks++;
+  const notesPanel = page.locator("#study-panel");
+  assert.equal(
+    await notesPanel.getByRole("button", { name: /\d{1,2}:\d{2}/ }).count(),
+    0,
+    "Notes tab must not show timestamp chips",
+  );
+  checks++;
+  assert.equal(
+    await notesPanel.locator("article").count(),
+    1,
+    "Notes render as one continuous document",
+  );
+  checks++;
   await shot("phase-09-notes-desktop");
   await page.getByLabel("Add your own point").fill("A note to remember");
   await page
