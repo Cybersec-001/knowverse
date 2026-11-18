@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {artifactWindows} from '../src/worker.js';
-import {youtubeId,parseVtt} from '../src/captions.js';
+import {youtubeId} from '../src/captions.js';
 test('long video windows cover all chunks in order without dropping citations',()=>{
  const chunks=Array.from({length:21},(_,i)=>({id:`source-${i}`,start_ts:i*120}));
  const windows=artifactWindows(chunks,8);
