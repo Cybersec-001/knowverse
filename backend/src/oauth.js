@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import { randomBytes, createHash } from 'node:crypto';
 import { query } from './db.js';
 
