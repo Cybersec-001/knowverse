@@ -1,4 +1,4 @@
-import 'dotenv/config';import {createHash} from 'node:crypto';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds,validateTimedSegments} from './retrieval.js';
+import 'dotenv/config';import {createHash} from 'node:crypto';import {Worker} from 'bullmq';import pgvector from 'pgvector';import {redis} from './queue.js';import {query,pool} from './db.js';import {provider,hashVector} from './provider.js';import {chunkSegments,retrieve,sourceIds} from './retrieval.js';
 import {sanitizeStudyItems,hasCitedItem} from './summary-style.js';import {youtubeVideoInfo,getYoutubeSegments,TranscriptError} from './youtube-transcript.js';import {load} from './storage.js';import {publishStatus,publishArtifact} from './events.js';
 const steps=['summary','notes','exam_notes','mcq'];
 export async function setStatus(id,status,error=null){await query('UPDATE videos SET status=$2,error=$3,updated_at=now() WHERE id=$1',[id,status,error]);await publishStatus(id,status)}
